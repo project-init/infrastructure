@@ -1,0 +1,13 @@
+{
+  "name": "infrastructure",
+  "private": true,
+  "packageManager": "bun@1.3.9",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "@types/bun": "1.3.9",
+    "typescript": "^5"
+  }
+}
