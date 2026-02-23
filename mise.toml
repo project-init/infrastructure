@@ -1,0 +1,17 @@
+[tools]
+opentofu = "1.11.4"
+awscli = "latest"
+opencode = "1.2.10"
+bun = "1.3.9"
+terramate = "0.16.0"
+
+[env]
+MISE_DISABLE_BACKENDS = "aqua,ubi"
+
+[settings]
+experimental = true
+
+# Lint and Format
+
+[tasks.format]
+run = "tofu fmt -recursive"
