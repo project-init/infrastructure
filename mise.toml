@@ -4,9 +4,7 @@ awscli = "latest"
 opencode = "1.2.10"
 bun = "1.3.9"
 terramate = "0.16.0"
-
-[env]
-MISE_DISABLE_BACKENDS = "aqua,ubi"
+buf = "latest"
 
 [settings]
 experimental = true

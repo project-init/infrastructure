@@ -4,7 +4,8 @@
   "packageManager": "bun@1.3.9",
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "gen/*"
   ],
   "devDependencies": {
     "@types/bun": "1.3.9",

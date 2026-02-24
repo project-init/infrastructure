@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package ghtokens.v1;
+
+import "google/protobuf/timestamp.proto";
+
+// Permissions dictionary using GitHub's permission names.
+message Permissions {
+  map<string, string> permissions = 1;
+}
+
+// TokenConfiguration definition from SPEC.
+message TokenConfiguration {
+  string namespace = 1;
+  string name = 2;
+  string description = 3;
+
+  optional string github_app_id = 4;
+
+  AuthRules auth = 5;
+  repeated string repositories = 6;
+  Permissions permissions = 7;
+
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
+  string created_by = 10;
+  string updated_by = 11;
+}
+
+// OIDC Auth Rules
+message AuthRules {
+  repeated string actor = 1;
+  repeated string repository = 2;
+  repeated string job_workflow_ref = 3;
+  repeated string ref = 4;
+  repeated string event_name = 5;
+  repeated string environment = 6;
+}

@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package ghtokens.v1;
+
+import "ghtokens/v1/common.proto";
+
+service AdminService {
+  rpc CreateConfiguration(CreateConfigurationRequest) returns (CreateConfigurationResponse) {}
+  rpc GetConfiguration(GetConfigurationRequest) returns (GetConfigurationResponse) {}
+  rpc UpdateConfiguration(UpdateConfigurationRequest) returns (UpdateConfigurationResponse) {}
+  rpc DeleteConfiguration(DeleteConfigurationRequest) returns (DeleteConfigurationResponse) {}
+  rpc ListConfigurations(ListConfigurationsRequest) returns (ListConfigurationsResponse) {}
+}
+
+message CreateConfigurationRequest {
+  TokenConfiguration configuration = 1;
+}
+
+message CreateConfigurationResponse {
+  TokenConfiguration configuration = 1;
+}
+
+message GetConfigurationRequest {
+  string namespace = 1;
+  string name = 2;
+}
+
+message GetConfigurationResponse {
+  TokenConfiguration configuration = 1;
+}
+
+message UpdateConfigurationRequest {
+  string namespace = 1;
+  string name = 2;
+  TokenConfiguration configuration = 3;
+}
+
+message UpdateConfigurationResponse {
+  TokenConfiguration configuration = 1;
+}
+
+message DeleteConfigurationRequest {
+  string namespace = 1;
+  string name = 2;
+}
+
+message DeleteConfigurationResponse {}
+
+message ListConfigurationsRequest {
+  string namespace = 1; // Optional, to list all in a namespace
+}
+
+message ListConfigurationsResponse {
+  repeated TokenConfiguration configurations = 1;
+}

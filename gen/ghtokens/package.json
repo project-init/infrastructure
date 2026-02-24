@@ -1,0 +1,16 @@
+{
+  "name": "@project-init/ghtokens-proto",
+  "version": "1.0.0",
+  "description": "Protobuf definitions and generated TypeScript code for ghtokens",
+  "exports": {
+    ".": "./src/gen/index.js",
+    "./*": "./src/gen/*.js"
+  },
+  "dependencies": {
+    "@bufbuild/protobuf": "^1.10.0",
+    "@connectrpc/connect": "^1.6.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3"
+  }
+}
