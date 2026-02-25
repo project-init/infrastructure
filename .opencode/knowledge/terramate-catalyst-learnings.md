@@ -118,9 +118,12 @@ spec:
 
 ## 7. Advanced Capabilities
 -   **Cross-Stack Dependencies**: Bundles can query other bundles. For example, an "App" bundle can query existing "Cluster" bundles to let the user select which cluster to deploy to.
--   **Data Sources**: Components can use standard Terraform `data` sources to look up resources (like VPCs) created by other stacks, often using tags (e.g., filtering by `bundle-uuid`).
--   **Reconfiguration**: Users can edit the Bundle Instance YAML file and re-run `terramate generate` to update infrastructure settings (e.g., changing S3 visibility from `private` to `public`).
+-   **Data Sources**: Components can use standard Terraform `data` sources to look up resources (like VPCs) created by other stacks, often using tags (e.g., filtering by `bundle-uuid` or `bundle-alias`).
+-   **Reconfiguration**: Users can edit the Bundle Instance YAML file and re-run `terramate generate` to update infrastructure settings (e.g., changing S3 visibility from `private` to `public`). Alternatively, they can run `terramate scaffold reconfigure` to update values interactively.
+-   **Automated Onboarding**: The `terramate component create` command can be run inside an existing Terraform or OpenTofu module to automatically generate Catalyst configuration (`component.tm.hcl`, `inputs.tm.hcl`) and wrap the module without writing boilerplate code manually.
 
 ## 8. Installation
--   Via `asdf`: `asdf plugin add terramate-catalyst ...`
--   Binaries: `terramate` and `terramate-ls`. Note: Catalyst binaries currently replace the standard Terramate CLI binaries.
+-   **Integration**: Catalyst is now built directly into the Terramate CLI. 
+-   **Via asdf**: `asdf plugin add terramate`
+-   **Via Homebrew**: `brew install terramate`
+-   *Note: Catalyst features (Scaffolding, Bundles, Components) are available in Terramate CLI Catalyst edition, which is free to use for small projects.*
