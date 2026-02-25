@@ -85,11 +85,15 @@ export type TokenConfiguration = Message<"ghtokens.v1.TokenConfiguration"> & {
   updatedAt?: Timestamp;
 
   /**
+   * The GitHub username of the user who created this configuration
+   *
    * @generated from field: string created_by = 10;
    */
   createdBy: string;
 
   /**
+   * The GitHub username of the user who last updated this configuration
+   *
    * @generated from field: string updated_by = 11;
    */
   updatedBy: string;

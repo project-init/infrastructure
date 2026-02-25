@@ -23,7 +23,9 @@ message TokenConfiguration {
 
   google.protobuf.Timestamp created_at = 8;
   google.protobuf.Timestamp updated_at = 9;
+  // The GitHub username of the user who created this configuration
   string created_by = 10;
+  // The GitHub username of the user who last updated this configuration
   string updated_by = 11;
 }
 

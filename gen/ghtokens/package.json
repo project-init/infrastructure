@@ -3,8 +3,10 @@
   "version": "1.0.0",
   "description": "Protobuf definitions and generated TypeScript code for ghtokens",
   "exports": {
-    ".": "./src/gen/index.js",
-    "./*": "./src/gen/*.js"
+    "./src/gen/*": {
+      "types": "./src/gen/*.ts",
+      "import": "./src/gen/*.ts"
+    }
   },
   "dependencies": {
     "@bufbuild/protobuf": "^1.10.0",
