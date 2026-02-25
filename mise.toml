@@ -11,7 +11,17 @@ MISE_DISABLE_BACKENDS = "aqua,ubi"
 [settings]
 experimental = true
 
-# Lint and Format
-
 [tasks.format]
+description = "Format all code"
+alias = ["fmt"]
+depends = ["format:*"]
+
+[tasks."format:tofu"]
+description = "Format OpenTofu code recursively"
+alias = ["fmt:tofu"]
 run = "tofu fmt -recursive"
+
+[tasks."format:terramate"]
+description = "Format Terramate files"
+alias = ["fmt:terramate"]
+run = "terramate fmt"
