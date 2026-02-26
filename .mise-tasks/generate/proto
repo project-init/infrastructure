@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# description: Generate JavaScript packages based off the proto files for each service
+
+set -e
+
+# Change into the proto directory where the central buf.yaml and buf.gen.yaml live
+cd proto
+
+for dir in */; do
+  # Remove trailing slash
+  dir="${dir%/}"
+  
+  if [ -d "$dir" ]; then
+    echo "Generating $dir..."
+    out_dir="../gen/${dir}/src/gen"
+    
+    # Clean the old files and recreate the directory
+    rm -rf "$out_dir"
+    mkdir -p "$out_dir"
+    
+    # Use the central buf.gen.yaml and direct output to the target gen directory
+    buf generate --path "$dir" --template buf.gen.yaml --output "$out_dir"
+  fi
+done

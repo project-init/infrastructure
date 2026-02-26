@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package ghtokens.v1;
+
+import "google/protobuf/timestamp.proto";
+import "ghtokens/v1/common.proto";
+
+service TokenService {
+  rpc GetToken(GetTokenRequest) returns (GetTokenResponse) {}
+  rpc DryRun(DryRunRequest) returns (DryRunResponse) {}
+}
+
+message GetTokenRequest {
+  string namespace = 1;
+  string name = 2;
+}
+
+message GetTokenResponse {
+  string token = 1;
+  google.protobuf.Timestamp expires_at = 2;
+  repeated string repositories = 3;
+  map<string, string> permissions = 4;
+}
+
+message DryRunRequest {
+  string namespace = 1;
+  string name = 2;
+}
+
+message DryRunResponse {
+  bool authorized = 1;
+  repeated string matched_claims = 2;
+  repeated string failed_claims = 3;
+}
