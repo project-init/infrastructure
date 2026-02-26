@@ -13,7 +13,6 @@
     "typescript": "^5"
   },
   "dependencies": {
-    "@bufbuild/protobuf": "1.10.0",
     "@octokit/auth-app": "^8.2.0"
   }
 }

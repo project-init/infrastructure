@@ -7,10 +7,8 @@ import { SecretsManagerLayer, GitHubAppLayer } from "./services/github.js";
 const AppLayer = Layer.mergeAll(
   OIDCValidatorLayer,
   AuthRulesEngineLayer,
-  RepositoryLayer(process.env.TABLE_NAME || "ghtokens-table"),
-  SecretsManagerLayer,
-).pipe(
-  Layer.provideMerge(GitHubAppLayer)
+  RepositoryLayer(process.env.TABLE_NAME ?? "ghtokens-table"),
+  GitHubAppLayer.pipe(Layer.provide(SecretsManagerLayer)),
 );
 
 export const appRuntime = ManagedRuntime.make(AppLayer);

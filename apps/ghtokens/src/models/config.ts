@@ -1,47 +1,42 @@
-import { Schema as S } from "@effect/schema";
+/**
+ * Internal domain types for the ghtokens service.
+ * These are used for DynamoDB persistence and internal logic,
+ * separate from the protobuf-generated types used at the API boundary.
+ */
 
-export const AuthRules = S.Record({
-  key: S.String,
-  value: S.Array(S.String)
-});
-export type AuthRules = S.Schema.Type<typeof AuthRules>;
+export interface AuthRules {
+  readonly [claim: string]: readonly string[];
+}
 
-export const Permissions = S.Record({
-  key: S.String,
-  value: S.String
-});
-export type Permissions = S.Schema.Type<typeof Permissions>;
+export interface Permissions {
+  readonly [permission: string]: string;
+}
 
-export const TokenConfiguration = S.Struct({
-  namespace: S.String,
-  name: S.String,
-  description: S.String,
-  github_app_id: S.optionalWith(S.String, { exact: true }),
-  auth: AuthRules,
-  repositories: S.Array(S.String),
-  permissions: Permissions,
-  created_at: S.String,
-  updated_at: S.String,
-  created_by: S.String,
-  updated_by: S.String,
-});
+export interface TokenConfiguration {
+  readonly namespace: string;
+  readonly name: string;
+  readonly description: string;
+  readonly github_app_id?: string;
+  readonly auth: AuthRules;
+  readonly repositories: readonly string[];
+  readonly permissions: Permissions;
+  readonly created_at: string;
+  readonly updated_at: string;
+  readonly created_by: string;
+  readonly updated_by: string;
+}
 
-export type TokenConfiguration = S.Schema.Type<typeof TokenConfiguration>;
+export type AuditEventType = "CREATE" | "UPDATE" | "DELETE" | "TOKEN_REQUEST" | "TOKEN_DENIED";
 
-export const AuditEventType = S.Literal("CREATE", "UPDATE", "DELETE", "TOKEN_REQUEST", "TOKEN_DENIED");
-export type AuditEventType = S.Schema.Type<typeof AuditEventType>;
-
-export const AuditRecord = S.Struct({
-  pk: S.String,
-  sk: S.String,
-  event_type: AuditEventType,
-  actor: S.String,
-  timestamp: S.String,
-  previous_value: S.optionalWith(TokenConfiguration, { exact: true }),
-  new_value: S.optionalWith(TokenConfiguration, { exact: true }),
-  oidc_claims: S.optionalWith(S.Record({ key: S.String, value: S.String }), { exact: true }),
-  matched_rules: S.optionalWith(S.Array(S.String), { exact: true }),
-  failed_rules: S.optionalWith(S.Array(S.String), { exact: true }),
-});
-
-export type AuditRecord = S.Schema.Type<typeof AuditRecord>;
+export interface AuditRecord {
+  readonly pk: string;
+  readonly sk: string;
+  readonly event_type: AuditEventType;
+  readonly actor: string;
+  readonly timestamp: string;
+  readonly previous_value?: TokenConfiguration;
+  readonly new_value?: TokenConfiguration;
+  readonly oidc_claims?: Record<string, string>;
+  readonly matched_rules?: readonly string[];
+  readonly failed_rules?: readonly string[];
+}
