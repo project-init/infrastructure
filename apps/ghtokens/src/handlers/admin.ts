@@ -12,7 +12,7 @@ import type {
 } from "@project-init/ghtokens-proto/src/gen/ghtokens/v1/admin_pb";
 import { TokenConfigurationSchema } from "@project-init/ghtokens-proto/src/gen/ghtokens/v1/common_pb";
 import { appRuntime } from "../runtime.js";
-import { mapErrorToConnect } from "./errors.js";
+import { mapErrorToConnect, extractIamActor } from "./errors.js";
 import { RepositoryService } from "../services/repository.js";
 
 /**
@@ -76,7 +76,8 @@ function domainConfigToProto(config: {
 
 export const registerAdminHandlers = (router: ConnectRouter) => {
   router.service(AdminService, {
-    createConfiguration: async (req: CreateConfigurationRequest) => {
+    createConfiguration: async (req: CreateConfigurationRequest, ctx) => {
+      const actor = extractIamActor(ctx);
       const program = Effect.gen(function* () {
         const repo = yield* RepositoryService;
         const now = new Date().toISOString();
@@ -92,8 +93,8 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
           permissions: proto?.permissions?.permissions ?? {},
           created_at: now,
           updated_at: now,
-          created_by: "admin",
-          updated_by: "admin",
+          created_by: actor,
+          updated_by: actor,
         };
 
         yield* repo.createConfig(config);
@@ -102,7 +103,7 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
           pk: `AUDIT#${config.namespace}#${config.name}`,
           sk: `${now}#${crypto.randomUUID()}`,
           event_type: "CREATE",
-          actor: "admin",
+          actor: actor,
           timestamp: now,
           new_value: config,
         });
@@ -113,7 +114,8 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
       return appRuntime.runPromise(program);
     },
 
-    getConfiguration: async (req: GetConfigurationRequest) => {
+    getConfiguration: async (req: GetConfigurationRequest, ctx) => {
+      extractIamActor(ctx); // Verify IAM auth
       const program = Effect.gen(function* () {
         const repo = yield* RepositoryService;
         const config = yield* repo.getConfig(req.namespace, req.name);
@@ -123,7 +125,8 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
       return appRuntime.runPromise(program);
     },
 
-    updateConfiguration: async (req: UpdateConfigurationRequest) => {
+    updateConfiguration: async (req: UpdateConfigurationRequest, ctx) => {
+      const actor = extractIamActor(ctx);
       const program = Effect.gen(function* () {
         const repo = yield* RepositoryService;
         const now = new Date().toISOString();
@@ -139,7 +142,7 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
           repositories: proto?.repositories ?? previousConfig.repositories,
           permissions: proto?.permissions?.permissions ?? previousConfig.permissions,
           updated_at: now,
-          updated_by: "admin",
+          updated_by: actor,
         };
 
         yield* repo.updateConfig(newConfig);
@@ -148,7 +151,7 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
           pk: `AUDIT#${req.namespace}#${req.name}`,
           sk: `${now}#${crypto.randomUUID()}`,
           event_type: "UPDATE",
-          actor: "admin",
+          actor: actor,
           timestamp: now,
           previous_value: previousConfig,
           new_value: newConfig,
@@ -160,7 +163,8 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
       return appRuntime.runPromise(program);
     },
 
-    deleteConfiguration: async (req: DeleteConfigurationRequest) => {
+    deleteConfiguration: async (req: DeleteConfigurationRequest, ctx) => {
+      const actor = extractIamActor(ctx);
       const program = Effect.gen(function* () {
         const repo = yield* RepositoryService;
         const now = new Date().toISOString();
@@ -172,7 +176,7 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
           pk: `AUDIT#${req.namespace}#${req.name}`,
           sk: `${now}#${crypto.randomUUID()}`,
           event_type: "DELETE",
-          actor: "admin",
+          actor: actor,
           timestamp: now,
           previous_value: previousConfig,
         });
@@ -183,7 +187,8 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
       return appRuntime.runPromise(program);
     },
 
-    listConfigurations: async (req: ListConfigurationsRequest) => {
+    listConfigurations: async (req: ListConfigurationsRequest, ctx) => {
+      extractIamActor(ctx); // Verify IAM auth
       const program = Effect.gen(function* () {
         const repo = yield* RepositoryService;
         const configs = yield* repo.listConfigs(req.namespace || undefined);

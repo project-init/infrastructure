@@ -48,6 +48,9 @@ export interface GitHubAppService {
     repositories: readonly string[],
     permissions: Record<string, string>,
   ) => Effect.Effect<TokenResult, GitHubAppError | SecretsManagerError>;
+  readonly listInstallationRepositories: (
+    appId: string,
+  ) => Effect.Effect<readonly string[], GitHubAppError | SecretsManagerError>;
 }
 export const GitHubAppService = Context.GenericTag<GitHubAppService>("@ghtokens/GitHubAppService");
 
@@ -64,7 +67,7 @@ export const GitHubAppLayer = Layer.effect(
 
     const tokenCache = yield* Cache.make({
       capacity: 1000,
-      timeToLive: "4 minutes",
+      timeToLive: "5 minutes",
       lookup: (key: string) =>
         Effect.gen(function* () {
           const parsed = JSON.parse(key) as {
@@ -102,7 +105,35 @@ export const GitHubAppLayer = Layer.effect(
         }),
     });
 
+    const reposCache = yield* Cache.make({
+      capacity: 100,
+      timeToLive: "10 minutes",
+      lookup: (appId: string) =>
+        Effect.gen(function* () {
+          const creds = yield* credsCache.get(appId);
+
+          const octokit = new Octokit({
+            authStrategy: createAppAuth,
+            auth: {
+              appId: creds.app_id,
+              privateKey: creds.private_key,
+              installationId: creds.installation_id,
+            },
+          });
+
+          // Fetch all repositories (handling basic pagination for up to 100)
+          const response = yield* Effect.tryPromise({
+            try: () => octokit.request("GET /installation/repositories", { per_page: 100 }),
+            catch: (e) =>
+              new GitHubAppError({ message: "Failed to list installation repositories", cause: e }),
+          });
+
+          return response.data.repositories.map((r: any) => r.name) as readonly string[];
+        }),
+    });
+
     return GitHubAppService.of({
+      listInstallationRepositories: (appId) => reposCache.get(appId),
       getInstallationToken: (appId, repositories, permissions) => {
         const key = JSON.stringify({
           appId,

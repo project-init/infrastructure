@@ -19,7 +19,13 @@ export const mapErrorToConnect = (error: unknown): ConnectError => {
   }
 
   if (error instanceof AuthorizationError) {
-    const details = error.failedClaims.map((c) => ({ claim: c.claim, result: c.result }));
+    const isDebug = process.env.DEBUG_AUTH === "true";
+    const details = error.failedClaims.map((c) => {
+      if (isDebug) {
+        return { claim: c.claim, expected: c.expected, actual: c.actual, result: c.result };
+      }
+      return { claim: c.claim, result: c.result };
+    });
     return new ConnectError(
       `Authorization failed. Failed claims: ${JSON.stringify(details)}`,
       Code.PermissionDenied,
@@ -47,4 +53,17 @@ export const extractBearerToken = (ctx: { requestHeader: Headers }): string | un
     return undefined;
   }
   return authHeader.slice(7);
+};
+
+export const extractIamActor = (ctx: { requestHeader: Headers }): string => {
+  // Try common headers injected by AWS Lambda Web Adapter or API Gateway for IAM auth
+  const actor =
+    ctx.requestHeader.get("x-amzn-iam-principal") ||
+    ctx.requestHeader.get("x-amzn-iam-arn") ||
+    ctx.requestHeader.get("x-amzn-iam-user");
+  
+  if (!actor) {
+    throw new ConnectError("Missing IAM authentication", Code.Unauthenticated);
+  }
+  return actor;
 };

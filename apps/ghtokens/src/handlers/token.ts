@@ -33,10 +33,25 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         const config = yield* repo.getConfig(req.namespace, req.name);
 
         // 3. Evaluate auth rules against claims
-        yield* authEngine.evaluate(config.auth, claims);
+        yield* authEngine.evaluate(config.auth, claims).pipe(
+          Effect.catchTag("AuthorizationError", (e) =>
+            Effect.gen(function* () {
+              yield* repo.appendAuditLog({
+                pk: `AUDIT#${req.namespace}#${req.name}`,
+                sk: `${new Date().toISOString()}#${crypto.randomUUID()}`,
+                event_type: "TOKEN_DENIED",
+                actor: claims["actor"] ?? "unknown",
+                timestamp: new Date().toISOString(),
+                oidc_claims: claims,
+                failed_rules: e.failedClaims.map((c) => c.claim),
+              }).pipe(Effect.ignore);
+              return yield* Effect.fail(e);
+            }),
+          ),
+        );
 
         // 4. Resolve repositories (expand @current macro)
-        const resolvedRepos = config.repositories
+        let resolvedRepos = config.repositories
           .map((r) => {
             if (r === "@current" && claims["repository"]) {
               const parts = claims["repository"].split("/");
@@ -52,14 +67,35 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
           throw new Error("No GitHub App ID configured");
         }
 
-        // 6. Request installation token
+        // 6. Expand wildcards in repositories
+        if (resolvedRepos.some((r) => r.includes("*"))) {
+          const availableRepos = yield* github.listInstallationRepositories(appId);
+          const expandedRepos = new Set<string>();
+          
+          for (const pattern of resolvedRepos) {
+            if (pattern.includes("*")) {
+              const regexStr = "^" + pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$";
+              const regex = new RegExp(regexStr);
+              for (const repo of availableRepos) {
+                if (regex.test(repo)) {
+                  expandedRepos.add(repo);
+                }
+              }
+            } else {
+              expandedRepos.add(pattern);
+            }
+          }
+          resolvedRepos = Array.from(expandedRepos);
+        }
+
+        // 7. Request installation token
         const tokenResult = yield* github.getInstallationToken(
           appId,
           resolvedRepos,
           config.permissions,
         );
 
-        // 7. Log audit event
+        // 8. Log audit event
         yield* repo.appendAuditLog({
           pk: `AUDIT#${req.namespace}#${req.name}`,
           sk: `${new Date().toISOString()}#${crypto.randomUUID()}`,
@@ -116,9 +152,12 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
           } satisfies Partial<DryRunResponse>;
         }
 
+        const failedClaimNames = new Set(authResult.left.failedClaims.map((c) => c.claim));
+        const matchedClaims = Object.keys(config.auth).filter((c) => !failedClaimNames.has(c));
+
         return {
           authorized: false,
-          matchedClaims: [] as string[],
+          matchedClaims,
           failedClaims: authResult.left.failedClaims.map(
             (c) => `${c.claim}: expected [${c.expected.join(", ")}], actual ${c.actual}`,
           ),
