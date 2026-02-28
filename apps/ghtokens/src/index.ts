@@ -1,12 +1,11 @@
 import { connectNodeAdapter } from "@connectrpc/connect-node";
 import * as http from "node:http";
+import serverless from "serverless-http";
 import routes from "./router.js";
-
-const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
 
 const connectHandler = connectNodeAdapter({ routes });
 
-const server = http.createServer((req, res) => {
+const requestListener: http.RequestListener = (req, res) => {
   // Simple health check endpoint
   if (req.url === "/health" && req.method === "GET") {
     res.writeHead(200, { "Content-Type": "application/json" });
@@ -16,8 +15,16 @@ const server = http.createServer((req, res) => {
 
   // Delegate all other requests to Connect RPC
   connectHandler(req, res);
-});
+};
 
-server.listen(PORT, () => {
-  console.log(`ghtokens service listening on port ${PORT}`);
-});
+// Export Lambda handler for Function URL
+export const handler = serverless(requestListener);
+
+// Start server locally if not running in AWS Lambda
+if (process.env.NODE_ENV !== "production" && !process.env.LAMBDA_TASK_ROOT) {
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 8080;
+  const server = http.createServer(requestListener);
+  server.listen(PORT, () => {
+    console.log(`ghtokens service listening on port ${PORT}`);
+  });
+}
