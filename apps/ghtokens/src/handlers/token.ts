@@ -7,6 +7,7 @@ import { TokenService } from "@project-init/ghtokens-proto/src/gen/ghtokens/v1/t
 import type { GetTokenRequest, GetTokenResponse, DryRunRequest, DryRunResponse } from "@project-init/ghtokens-proto/src/gen/ghtokens/v1/token_pb";
 import { appRuntime } from "../runtime.js";
 import { mapErrorToConnect, extractBearerToken } from "./errors.js";
+import { GitHubAppError } from "../services/errors.js";
 import { RepositoryService } from "../services/repository.js";
 import { OIDCValidatorService } from "../services/oidc.js";
 import { AuthRulesEngine } from "../services/auth-rules.js";
@@ -64,7 +65,7 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         // 5. Determine GitHub App ID
         const appId = config.github_app_id ?? process.env.DEFAULT_GITHUB_APP_ID;
         if (!appId) {
-          throw new Error("No GitHub App ID configured");
+          return yield* Effect.fail(new GitHubAppError({ message: "No GitHub App ID configured", cause: null }));
         }
 
         // 6. Expand wildcards in repositories

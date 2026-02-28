@@ -56,6 +56,11 @@ export const extractBearerToken = (ctx: { requestHeader: Headers }): string | un
 };
 
 export const extractIamActor = (ctx: { requestHeader: Headers }): string => {
+  const authHeader = ctx.requestHeader.get("authorization");
+  if (!authHeader || !authHeader.startsWith("AWS4-HMAC-SHA256")) {
+    throw new ConnectError("Missing IAM authentication (SigV4)", Code.Unauthenticated);
+  }
+
   // Try common headers injected by AWS Lambda Web Adapter or API Gateway for IAM auth
   const actor =
     ctx.requestHeader.get("x-amzn-iam-principal") ||
@@ -63,7 +68,13 @@ export const extractIamActor = (ctx: { requestHeader: Headers }): string => {
     ctx.requestHeader.get("x-amzn-iam-user");
   
   if (!actor) {
-    throw new ConnectError("Missing IAM authentication", Code.Unauthenticated);
+    // If headers aren't present but SigV4 was used, fallback to a generic actor 
+    // or parse the access key from the authorization header
+    const match = authHeader.match(/Credential=([^/]+)\//);
+    if (match && match[1]) {
+      return `AWS:${match[1]}`;
+    }
+    throw new ConnectError("Could not determine IAM actor from request", Code.Unauthenticated);
   }
   return actor;
 };

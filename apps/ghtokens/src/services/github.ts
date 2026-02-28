@@ -121,14 +121,21 @@ export const GitHubAppLayer = Layer.effect(
             },
           });
 
-          // Fetch all repositories (handling basic pagination for up to 100)
-          const response = yield* Effect.tryPromise({
-            try: () => octokit.request("GET /installation/repositories", { per_page: 100 }),
-            catch: (e) =>
-              new GitHubAppError({ message: "Failed to list installation repositories", cause: e }),
-          });
+          // Fetch all repositories handling pagination
+          let allRepos: any[] = [];
+          let page = 1;
+          while (true) {
+            const response = yield* Effect.tryPromise({
+              try: () => octokit.request("GET /installation/repositories", { per_page: 100, page }),
+              catch: (e) =>
+                new GitHubAppError({ message: "Failed to list installation repositories", cause: e }),
+            });
+            allRepos = allRepos.concat(response.data.repositories);
+            if (response.data.repositories.length < 100) break;
+            page++;
+          }
 
-          return response.data.repositories.map((r: any) => r.name) as readonly string[];
+          return allRepos.map((r: any) => r.name) as readonly string[];
         }),
     });
 
