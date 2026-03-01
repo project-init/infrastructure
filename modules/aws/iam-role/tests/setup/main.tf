@@ -55,18 +55,20 @@ variable "tags" {
   default     = {}
 }
 
+data "aws_iam_policy_document" "ec2_trust" {
+  statement {
+    actions = ["sts:AssumeRole"]
+    effect  = "Allow"
+    principals {
+      type        = "Service"
+      identifiers = ["ec2.amazonaws.com"]
+    }
+  }
+}
+
 locals {
   # EC2 default trust policy
-  ec2_trust_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Action = "sts:AssumeRole"
-      Effect = "Allow"
-      Principal = {
-        Service = "ec2.amazonaws.com"
-      }
-    }]
-  })
+  ec2_trust_policy = data.aws_iam_policy_document.ec2_trust.json
 
   # Validation: assume_role_policy required when is_instance_role is false
   has_assume_role_policy = var.assume_role_policy != null

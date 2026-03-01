@@ -3,6 +3,14 @@
 # Consolidated tests for validation, trust policy logic, and resource structure
 #------------------------------------------------------------------------------
 
+mock_provider "aws" {
+  mock_data "aws_iam_policy_document" {
+    defaults = {
+      json = "{\"Statement\":[{\"Action\":\"sts:AssumeRole\",\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"}}],\"Version\":\"2012-10-17\"}"
+    }
+  }
+}
+
 #------------------------------------------------------------------------------
 # Test: Valid configuration - standard role with trust policy
 #------------------------------------------------------------------------------
