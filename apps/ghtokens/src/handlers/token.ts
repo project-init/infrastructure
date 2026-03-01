@@ -1,6 +1,5 @@
 import type { ConnectRouter } from "@connectrpc/connect";
 import { ConnectError, Code } from "@connectrpc/connect";
-import { create } from "@bufbuild/protobuf";
 import { timestampFromDate } from "@bufbuild/protobuf/wkt";
 import { Effect } from "effect";
 import { TokenService } from "@project-init/ghtokens-proto/src/gen/ghtokens/v1/token_pb";
@@ -21,7 +20,7 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         throw new ConnectError("Missing or invalid Authorization header", Code.Unauthenticated);
       }
 
-      const program = Effect.gen(function* () {
+      const program = Effect.gen(function*() {
         const repo = yield* RepositoryService;
         const oidc = yield* OIDCValidatorService;
         const authEngine = yield* AuthRulesEngine;
@@ -36,7 +35,7 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         // 3. Evaluate auth rules against claims
         yield* authEngine.evaluate(config.auth, claims).pipe(
           Effect.catchTag("AuthorizationError", (e) =>
-            Effect.gen(function* () {
+            Effect.gen(function*() {
               yield* repo.appendAuditLog({
                 pk: `AUDIT#${req.namespace}#${req.name}`,
                 sk: `${new Date().toISOString()}#${crypto.randomUUID()}`,
@@ -72,7 +71,7 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         if (resolvedRepos.some((r) => r.includes("*"))) {
           const availableRepos = yield* github.listInstallationRepositories(appId);
           const expandedRepos = new Set<string>();
-          
+
           for (const pattern of resolvedRepos) {
             if (pattern.includes("*")) {
               const regexStr = "^" + pattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$";
@@ -123,7 +122,7 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
         throw new ConnectError("Missing or invalid Authorization header", Code.Unauthenticated);
       }
 
-      const program = Effect.gen(function* () {
+      const program = Effect.gen(function*() {
         const repo = yield* RepositoryService;
         const oidc = yield* OIDCValidatorService;
         const authEngine = yield* AuthRulesEngine;
