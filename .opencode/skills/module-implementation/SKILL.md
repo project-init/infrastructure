@@ -23,31 +23,33 @@ You are a technical architect and OpenTofu expert responsible for implementing a
      - `outputs.tf`: Contains the defined outputs with clear descriptions.
      - `versions.tf`: Defines the required OpenTofu version and required providers (including their versions) as outlined in the Dependencies section.
 
-4. **Create an Example**:
-   - Create a complete usage example in the `examples/complete` directory within the module.
-   - Include `examples/complete/main.tf`, `examples/complete/variables.tf`, `examples/complete/outputs.tf`, and `examples/complete/versions.tf`.
-   - The example should demonstrate how to call the module with sensible parameters, covering most of the module's functionality.
-
-5. **Write Tests**:
+4. **Write Tests**:
    - Create appropriate OpenTofu tests to validate the module's behavior.
-   - Create a `tests/` directory with `.tftest.hcl` files (e.g., `tests/main.tftest.hcl`) or equivalent tests based on project conventions. Ensure the tests reference the `examples/complete` setup if applicable or directly test the module.
+   - Create a `tests/` directory with `.tftest.hcl` files (e.g., `tests/main.tftest.hcl`). Prefer creating a `tests/setup` directory with a standard testing harness, based on conventions you find in other modules in the repository.
+
+5. **Create an Example** (Optional):
+   - Create a usage example in the `examples/` directory within the module **only if** explicitly requested in the `SPEC.md` or if it matches the conventions found in other sibling modules. Otherwise, your tests in `tests/` serve as the primary usage example.
 
 6. **Generate the README**:
    - Create a comprehensive `README.md` file for the module.
    - The README should include:
      - The module's description and purpose.
-     - Usage examples (can copy from the `examples/complete/main.tf`).
-     - A structured list/table of Inputs, Outputs, and Providers (you may generate this dynamically using tools like `terraform-docs` if available in the project, or write it manually based on the `.tf` files).
+     - Usage examples.
+     - A structured list/table of Inputs, Outputs, and Providers. Avoid using external generation tools; write this section manually based on the `.tf` files to avoid dependencies.
 
 7. **Review and Format**:
-   - After writing the code, use tools to run `tofu fmt -recursive` on the module's directory to ensure standard formatting.
+   - After writing the code, run `tofu fmt -recursive` on the module's directory to ensure standard formatting.
+   - Run `tofu init -backend=false` in the module directory to initialize it for validation.
    - Run `tofu validate` in the module directory to ensure the syntax and configuration are valid. Fix any issues that arise.
 
 8. **Run Tests**:
+   - Run `tofu init -backend=false` inside the module's directory if you haven't already.
    - Execute `tofu test` in the module directory to verify the tests pass. Fix any failing tests or configuration issues before concluding the task.
 
 ## Guidelines
 
+- **Agent Guardrails**: Before writing the module, search for and read the nearest `AGENTS.md` file (e.g., in the module's directory or the parent `modules/` directory). Follow all rules explicitly defined there.
+- **Provider Restriction**: Do not define `provider` blocks within child modules. Only define `required_providers` in `versions.tf`.
 - Follow idiomatic OpenTofu practices.
 - Ensure all resources, variables, and outputs have meaningful descriptions.
 - Strictly adhere to the scope defined in the `SPEC.md`. Do not implement features outside of the agreed specification.
