@@ -1,6 +1,18 @@
 variable "name" {
-  description = "Name of the IAM role"
+  description = "Name of the IAM role. Conflicts with name_prefix."
   type        = string
+  default     = null
+
+  validation {
+    condition     = (var.name == null) != (var.name_prefix == null)
+    error_message = "Exactly one of name or name_prefix must be provided."
+  }
+}
+
+variable "name_prefix" {
+  description = "Prefix for the IAM role name. Conflicts with name."
+  type        = string
+  default     = null
 }
 
 variable "description" {
@@ -12,6 +24,11 @@ variable "assume_role_policy" {
   description = "JSON trust policy document. Required if is_instance_role = false"
   type        = string
   default     = null
+
+  validation {
+    condition     = var.assume_role_policy != null || var.is_instance_role
+    error_message = "assume_role_policy is required when is_instance_role is false"
+  }
 }
 
 variable "is_instance_role" {
