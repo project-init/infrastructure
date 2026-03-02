@@ -25,3 +25,12 @@ script "test" {
     ]
   }
 }
+
+script "mark" "changed" {
+  description = "Mark module as changed for release-please"
+  job {
+    commands = [
+      ["mise", "run", "mark:changed-module", tm_substr(terramate.stack.path.absolute, 1, -1), env.PR_NUMBER],
+    ]
+  }
+}

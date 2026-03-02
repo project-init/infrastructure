@@ -1,0 +1,27 @@
+#!/usr/bin/env bun
+// MISE description="Mark a module as changed to trigger release-please"
+// USAGE mise run mark:changed-module <module-path> <pr-number>
+
+import { write } from "bun";
+import { join } from "path";
+import { existsSync, statSync } from "fs";
+
+const modulePath = process.argv[2];
+const prNumber = process.argv[3];
+
+if (!modulePath || !prNumber) {
+  console.error("Usage: mise run mark:changed-module <module-path> <pr-number>");
+  process.exit(1);
+}
+
+const normalizedPath = modulePath.replace(/^\/+|\/+$/g, '');
+
+if (!existsSync(normalizedPath) || !statSync(normalizedPath).isDirectory()) {
+  console.error(`Error: Directory '${normalizedPath}' does not exist.`);
+  process.exit(1);
+}
+
+const triggerFile = join(normalizedPath, ".changed");
+console.log(`Marking module ${normalizedPath} as changed for PR #${prNumber}`);
+
+await write(triggerFile, `PR: ${prNumber}\n`);
