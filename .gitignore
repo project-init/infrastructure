@@ -18,3 +18,5 @@ bun.lock
 
 # OS
 .DS_Store
+
+/build

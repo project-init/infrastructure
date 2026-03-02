@@ -1,0 +1,209 @@
+#!/usr/bin/env bun
+// MISE description="Build a Terraform module and resolve its dependencies"
+// USAGE mise run build:module <module-path> [version]
+
+import { $, Glob } from "bun";
+
+// Parse arguments
+const modulePath = process.argv[2];
+const providedVersion = process.argv[3];
+
+if (!modulePath) {
+  console.error("Usage: mise run build:module <module-path> [version]");
+  console.error("Example: mise run build:module modules/aws/github-actions-role 1.2.3");
+  process.exit(1);
+}
+
+// Parse the module path to extract provider and module name
+const pathParts = modulePath.split("/");
+if (pathParts.length < 3 || pathParts[0] !== "modules") {
+  console.error(`Invalid module path: ${modulePath}`);
+  console.error("Expected format: modules/<provider>/<module-name>");
+  process.exit(1);
+}
+
+const provider = pathParts[1];
+const moduleName = pathParts.slice(2).join("/"); // Handle nested modules like "team/github"
+
+// Read the release-please manifest
+let manifest: Record<string, string> = {};
+try {
+  const manifestContent = await Bun.file(".release-please-manifest.json").text();
+  manifest = JSON.parse(manifestContent);
+} catch (error) {
+  console.error("Failed to read .release-please-manifest.json");
+  console.error(error);
+  process.exit(1);
+}
+
+// Determine the version to use
+let version: string;
+if (providedVersion) {
+  version = providedVersion;
+  console.log(`Using provided version: ${version}`);
+} else {
+  version = manifest[modulePath];
+  if (!version) {
+    console.error(`No version found in manifest for module: ${modulePath}`);
+    console.error("Please provide a version argument or add the module to .release-please-manifest.json");
+    process.exit(1);
+  }
+  console.log(`Using version from manifest: ${version}`);
+}
+
+// Define paths
+const sourceDir = modulePath;
+const outputDir = `build/modules/${provider}/${moduleName}/${version}`;
+
+// Check if source directory exists
+let sourceExists = false;
+try {
+  await $`test -d ${sourceDir}`;
+  sourceExists = true;
+} catch {
+  sourceExists = false;
+}
+
+if (!sourceExists) {
+  console.error(`Source module not found: ${sourceDir}`);
+  process.exit(1);
+}
+
+console.log(`\nBuilding module: ${modulePath}`);
+console.log(`Provider: ${provider}`);
+console.log(`Module: ${moduleName}`);
+console.log(`Version: ${version}`);
+console.log(`Output: ${outputDir}\n`);
+
+// Clean and create output directory
+console.log(`Cleaning output directory...`);
+await $`rm -rf ${outputDir}`;
+await $`mkdir -p ${outputDir}`;
+
+// Copy all files from source to output
+console.log(`Copying files from ${sourceDir} to ${outputDir}...`);
+await $`cp -r ${sourceDir}/* ${outputDir}/ 2>/dev/null || true`;
+
+// Function to resolve a relative module path to an absolute module path
+function resolveModulePath(fromFile: string, relativeSource: string): string | null {
+  // Convert output path back to source path
+  // fromFile is like "build/modules/aws/github-actions-role/1.0.0/main.tf"
+  // We need to convert it to "modules/aws/github-actions-role/main.tf"
+  const relativeFromOutput = fromFile.replace(`${outputDir}/`, "");
+  const fromSourceFile = `${sourceDir}/${relativeFromOutput}`;
+  
+  const fromDir = fromSourceFile.substring(0, fromSourceFile.lastIndexOf("/"));
+  const resolved = fromDir + "/" + relativeSource;
+  
+  // Normalize the path (resolve .. and .)
+  const parts = resolved.split("/");
+  const normalized: string[] = [];
+  
+  for (const part of parts) {
+    if (part === "..") {
+      normalized.pop();
+    } else if (part !== "." && part !== "") {
+      normalized.push(part);
+    }
+  }
+  
+  const absolutePath = normalized.join("/");
+  
+  // Check if this path exists in the manifest
+  if (manifest[absolutePath]) {
+    return absolutePath;
+  }
+  
+  return null;
+}
+
+// Function to get registry source from manifest entry
+function getRegistrySource(modulePath: string, provider: string): string {
+  const parts = modulePath.split("/");
+  // parts[0] = "modules", parts[1] = provider, parts[2+] = module name
+  const nameParts = parts.slice(2);
+  const registryName = nameParts.join("-"); // e.g., "iam-role" for "modules/aws/iam-role"
+  return `project-init/${registryName}/${provider}`;
+}
+
+// Find and process all .tf files in the output directory
+console.log("Processing Terraform files to replace local module references...\n");
+
+const tfGlob = new Glob("**/*.tf");
+const tfFiles: string[] = [];
+
+for await (const file of tfGlob.scan(outputDir)) {
+  tfFiles.push(`${outputDir}/${file}`);
+}
+
+for (const tfFile of tfFiles) {
+  let content = await Bun.file(tfFile).text();
+  let modified = false;
+  
+  // Pattern to match module blocks with local sources
+  // Matches: module "name" { ... source = "../relative/path" ... }
+  const moduleRegex = /module\s+"([^"]+)"\s*\{([^}]*)\}/gs;
+  
+  content = content.replace(moduleRegex, (match, moduleName, moduleBody) => {
+    // Check if there's a local source reference
+    const sourceMatch = moduleBody.match(/source\s*=\s*"([^"]+)"/);
+    
+    if (sourceMatch) {
+      const sourceValue = sourceMatch[1];
+      
+      // Only process local/relative sources (starting with ./ or ../)
+      if (sourceValue.startsWith("./") || sourceValue.startsWith("../")) {
+        const resolvedPath = resolveModulePath(tfFile, sourceValue);
+        
+        if (resolvedPath && manifest[resolvedPath]) {
+          const depVersion = manifest[resolvedPath];
+          const depProvider = resolvedPath.split("/")[1];
+          const registrySource = getRegistrySource(resolvedPath, depProvider);
+          
+          console.log(`  ${tfFile}:`);
+          console.log(`    Module: ${moduleName}`);
+          console.log(`    Old source: "${sourceValue}"`);
+          console.log(`    New source: "${registrySource}"`);
+          console.log(`    Version: ${depVersion}\n`);
+          
+          // Replace the source value and add version
+          let newBody = moduleBody.replace(
+            /source\s*=\s*"[^"]+"/,
+            `source  = "${registrySource}"\n  version = "${depVersion}"`
+          );
+          
+          modified = true;
+          return `module "${moduleName}" {${newBody}}`;
+        } else {
+          console.warn(`  Warning: Could not resolve local module reference in ${tfFile}:`);
+          console.warn(`    Module: ${moduleName}`);
+          console.warn(`    Source: "${sourceValue}"`);
+          console.warn(`    Resolved path: ${resolvedPath || "N/A"}`);
+          if (resolvedPath && !manifest[resolvedPath]) {
+            console.warn(`    Reason: ${resolvedPath} not found in .release-please-manifest.json\n`);
+          } else {
+            console.warn(`    Reason: Could not resolve path\n`);
+          }
+        }
+      }
+    }
+    
+    return match;
+  });
+  
+  if (modified) {
+    await Bun.write(tfFile, content);
+  }
+}
+
+// Run terraform-docs to generate documentation
+console.log("Generating documentation with terraform-docs...");
+try {
+  await $`cd ${outputDir} && terraform-docs markdown table --output-file README.md --output-mode inject .`;
+  console.log("Documentation generated successfully.\n");
+} catch (error) {
+  console.warn("Warning: Failed to generate documentation with terraform-docs");
+  console.warn(error);
+}
+
+console.log(`✓ Module build complete: ${outputDir}\n`);
