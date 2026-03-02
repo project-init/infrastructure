@@ -1,0 +1,142 @@
+#!/usr/bin/env bun
+
+import { readdir, readFile, writeFile } from "fs/promises";
+import { existsSync } from "fs";
+import { join } from "path";
+
+const RELEASE_CONFIG_FILE = "release-please-config.json";
+const RELEASE_MANIFEST_FILE = ".release-please-manifest.json";
+const MODULES_DIR = "modules";
+
+async function loadJsonFile(filepath: string): Promise<Record<string, any>> {
+  if (existsSync(filepath)) {
+    const content = await readFile(filepath, "utf-8");
+    return JSON.parse(content);
+  }
+  return {};
+}
+
+async function saveJsonFile(filepath: string, data: Record<string, any>): Promise<void> {
+  // Sort keys recursively
+  const sorted = sortKeys(data);
+  await writeFile(filepath, JSON.stringify(sorted, null, 2) + "\n");
+}
+
+function sortKeys(obj: Record<string, any>): Record<string, any> {
+  if (Array.isArray(obj)) {
+    return obj.map(sortKeys);
+  } else if (obj !== null && typeof obj === "object") {
+    const sorted: Record<string, any> = {};
+    Object.keys(obj)
+      .sort((a, b) => a.localeCompare(b))
+      .forEach((key) => {
+        sorted[key] = sortKeys(obj[key]);
+      });
+    return sorted;
+  }
+  return obj;
+}
+
+async function discoverModules(): Promise<string[]> {
+  const modules: string[] = [];
+
+  try {
+    const providers = await readdir(MODULES_DIR);
+    for (const provider of providers) {
+      const providerPath = join(MODULES_DIR, provider);
+      try {
+        const stat = await Bun.file(providerPath).stat();
+        if (!stat.isDirectory()) continue;
+
+        const moduleNames = await readdir(providerPath);
+        for (const moduleName of moduleNames) {
+          const modulePath = join(providerPath, moduleName);
+          const stat = await Bun.file(modulePath).stat();
+          if (stat.isDirectory()) {
+            modules.push(`${provider}/${moduleName}`);
+          }
+        }
+      } catch (e) {
+        // Skip if can't read provider dir
+      }
+    }
+  } catch (e) {
+    console.error("Failed to read modules directory:", e);
+    process.exit(1);
+  }
+
+  return modules.sort();
+}
+
+async function main() {
+  console.log("Generating release-please configuration...\n");
+
+  // Load existing configs
+  let config = await loadJsonFile(RELEASE_CONFIG_FILE);
+  let manifest = await loadJsonFile(RELEASE_MANIFEST_FILE);
+
+  // Ensure structure
+  if (!config.packages) {
+    config.packages = {};
+  }
+  if (!manifest["."]) {
+    manifest["."] = "0.0.0";
+  }
+
+  // Discover modules
+  const modules = await discoverModules();
+
+  console.log(`Found ${modules.length} terraform modules:`);
+
+  let newCount = 0;
+  let existingCount = 0;
+
+  for (const module of modules) {
+    const [provider, moduleName] = module.split("/");
+    const packagePath = `modules/${provider}/${moduleName}`;
+    const component = `${provider}-${moduleName}`;
+
+    // Add to manifest if not exists
+    if (!manifest[packagePath]) {
+      manifest[packagePath] = "0.0.0";
+      newCount++;
+      console.log(`  + ${packagePath} (new)`);
+    } else {
+      existingCount++;
+      console.log(`  • ${packagePath} (existing)`);
+    }
+
+    // Update config
+    config.packages[packagePath] = {
+      "release-type": "terraform-module",
+      component: component,
+      draft: false,
+      prerelease: false,
+      pullRequestHeader: `Terraform Module Release: ${component}`,
+      includeComponentInTag: true,
+      separatePullRequests: false
+    };
+  }
+
+  // Sort manifest keys
+  const sortedManifest: Record<string, string> = {};
+  Object.keys(manifest)
+    .sort((a, b) => a.localeCompare(b))
+    .forEach((key) => {
+      sortedManifest[key] = manifest[key];
+    });
+
+  // Save files
+  await saveJsonFile(RELEASE_CONFIG_FILE, config);
+  await saveJsonFile(RELEASE_MANIFEST_FILE, sortedManifest);
+
+  console.log(`\nConfiguration updated!`);
+  console.log(`  • ${newCount} new module(s) added`);
+  console.log(`  • ${existingCount} existing module(s) preserved`);
+  console.log(`  • ${Object.keys(config.packages).length} total packages configured`);
+}
+
+main().catch((err) => {
+  console.error("Error generating release-please config:", err);
+  process.exit(1);
+});

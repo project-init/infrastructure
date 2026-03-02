@@ -1,0 +1,130 @@
+{
+  "packages": {
+    "modules/aws/account": {
+      "component": "aws-account",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-account",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/account-acm": {
+      "component": "aws-account-acm",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-account-acm",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/account-bootstrap-iam": {
+      "component": "aws-account-bootstrap-iam",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-account-bootstrap-iam",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/account-networking": {
+      "component": "aws-account-networking",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-account-networking",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/eks-gha-runners": {
+      "component": "aws-eks-gha-runners",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-eks-gha-runners",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/github-actions-role": {
+      "component": "aws-github-actions-role",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-github-actions-role",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/iam-role": {
+      "component": "aws-iam-role",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-iam-role",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/identity-center": {
+      "component": "aws-identity-center",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-identity-center",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/ipam": {
+      "component": "aws-ipam",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-ipam",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/platform-bootstrap-iam": {
+      "component": "aws-platform-bootstrap-iam",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-platform-bootstrap-iam",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/platform-dns": {
+      "component": "aws-platform-dns",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-platform-dns",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/platform-networking": {
+      "component": "aws-platform-networking",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-platform-networking",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/github/repository": {
+      "component": "github-repository",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: github-repository",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/github/team": {
+      "component": "github-team",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: github-team",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    }
+  }
+}
