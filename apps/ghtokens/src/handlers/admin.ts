@@ -109,9 +109,11 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
         });
 
         return { configuration: domainConfigToProto(config) };
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
 
     getConfiguration: async (req: GetConfigurationRequest, ctx) => {
@@ -120,9 +122,11 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
         const repo = yield* RepositoryService;
         const config = yield* repo.getConfig(req.namespace, req.name);
         return { configuration: domainConfigToProto(config) };
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
 
     updateConfiguration: async (req: UpdateConfigurationRequest, ctx) => {
@@ -158,9 +162,11 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
         });
 
         return { configuration: domainConfigToProto(newConfig) };
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
 
     deleteConfiguration: async (req: DeleteConfigurationRequest, ctx) => {
@@ -182,9 +188,11 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
         });
 
         return {};
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
 
     listConfigurations: async (req: ListConfigurationsRequest, ctx) => {
@@ -196,9 +204,11 @@ export const registerAdminHandlers = (router: ConnectRouter) => {
         return {
           configurations: configs.map((c) => domainConfigToProto(c)),
         };
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
   });
 };

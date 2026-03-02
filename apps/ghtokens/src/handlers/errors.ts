@@ -11,16 +11,21 @@ import {
 export const mapErrorToConnect = (error: unknown): ConnectError => {
   if (error instanceof ConnectError) return error;
 
-  if (error instanceof ConfigNotFoundError) {
+  const isTaggedError = typeof error === "object" && error !== null && "_tag" in error;
+  const tag = isTaggedError ? (error as { _tag: string })._tag : undefined;
+
+  if (tag === "ConfigNotFoundError" || error instanceof ConfigNotFoundError) {
+    const err = error as ConfigNotFoundError;
     return new ConnectError(
-      `Configuration not found: ${error.namespace}/${error.name}`,
+      `Configuration not found: ${err.namespace}/${err.name}`,
       Code.NotFound,
     );
   }
 
-  if (error instanceof AuthorizationError) {
+  if (tag === "AuthorizationError" || error instanceof AuthorizationError) {
+    const err = error as AuthorizationError;
     const isDebug = process.env.DEBUG_AUTH === "true";
-    const details = error.failedClaims.map((c) => {
+    const details = err.failedClaims.map((c) => {
       if (isDebug) {
         return { claim: c.claim, expected: c.expected, actual: c.actual, result: c.result };
       }
@@ -32,18 +37,20 @@ export const mapErrorToConnect = (error: unknown): ConnectError => {
     );
   }
 
-  if (error instanceof JWTValidationError) {
+  if (tag === "JWTValidationError" || error instanceof JWTValidationError) {
     return new ConnectError("Invalid or expired OIDC token", Code.Unauthenticated);
   }
 
-  if (error instanceof GitHubAppError) {
-    return new ConnectError(`GitHub API error: ${error.message}`, Code.Internal);
+  if (tag === "GitHubAppError" || error instanceof GitHubAppError) {
+    const err = error as GitHubAppError;
+    return new ConnectError(`GitHub API error: ${err.message}`, Code.Internal);
   }
 
-  if (error instanceof SecretsManagerError || error instanceof DynamoDBError) {
+  if (tag === "SecretsManagerError" || tag === "DynamoDBError" || error instanceof SecretsManagerError || error instanceof DynamoDBError) {
     return new ConnectError("Internal server error", Code.Internal);
   }
 
+  console.error("Unknown error mapping to ConnectError:", error);
   return new ConnectError("Unknown error occurred", Code.Unknown);
 };
 

@@ -111,9 +111,11 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
           repositories: resolvedRepos,
           permissions: config.permissions,
         } satisfies Partial<GetTokenResponse>;
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
 
     dryRun: async (req: DryRunRequest, ctx) => {
@@ -162,9 +164,11 @@ export const registerTokenHandlers = (router: ConnectRouter) => {
             (c) => `${c.claim}: expected [${c.expected.join(", ")}], actual ${c.actual}`,
           ),
         } satisfies Partial<DryRunResponse>;
-      }).pipe(Effect.catchAll((e) => Effect.fail(mapErrorToConnect(e))));
+      });
 
-      return appRuntime.runPromise(program);
+      const result = await appRuntime.runPromise(Effect.either(program));
+      if (result._tag === "Left") throw mapErrorToConnect(result.left);
+      return result.right;
     },
   });
 };
