@@ -1,8 +1,8 @@
 script "build" {
-  description = "Build the module (no-op)"
+  description = "Build the module"
   job {
     commands = [
-      ["echo", "no-op"],
+      ["mise", "run", "build:module", tm_substr(terramate.stack.path.absolute, 1, -1), env.VERSION],
     ]
   }
 }
