@@ -7,6 +7,9 @@ resource "github_repository" "this" {
   has_projects = var.has_projects
   has_wiki     = var.has_wiki
 
+  # Archiving instead of destroying
+  archive_on_destroy = var.archive_on_destroy
+
   # Initialization for branch protections
   auto_init = true
 

@@ -37,6 +37,12 @@ variable "has_wiki" {
   default     = true
 }
 
+variable "archive_on_destroy" {
+  type        = bool
+  description = "Set to true to archive the repository instead of deleting on destroy."
+  default     = true
+}
+
 variable "required_pull_request_reviews" {
   type        = number
   description = "The number of required approving reviews for pull requests targeting main."

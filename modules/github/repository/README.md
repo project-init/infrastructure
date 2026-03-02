@@ -50,6 +50,7 @@ module "github_repo" {
 | `has_issues` | `bool` | `true` | No | Whether to enable GitHub Issues for the repository. |
 | `has_projects` | `bool` | `true` | No | Whether to enable GitHub Projects for the repository. |
 | `has_wiki` | `bool` | `true` | No | Whether to enable GitHub Wiki for the repository. |
+| `archive_on_destroy` | `bool` | `true` | No | Set to true to archive the repository instead of deleting on destroy. |
 | `required_pull_request_reviews` | `number` | `2` | No | The number of required approving reviews for pull requests targeting `main`. |
 | `required_status_checks` | `list(string)` | `[]` | No | A list of status checks that must pass before merging into `main`. |
 | `collaborator_permissions` | `map(string)` | `{}` | No | A map of usernames to permission levels (e.g., "pull", "push", "maintain", "admin", "triage"). |
