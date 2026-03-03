@@ -1,5 +1,14 @@
 {
   "packages": {
+    "apps/ghtokens": {
+      "component": "ghtokens",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "App Release: ghtokens",
+      "release-type": "node",
+      "separatePullRequests": false
+    },
     "modules/aws/account": {
       "component": "aws-account",
       "draft": false,
@@ -42,6 +51,15 @@
       "includeComponentInTag": true,
       "prerelease": false,
       "pullRequestHeader": "Terraform Module Release: aws-eks-gha-runners",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
+    "modules/aws/ghtokens": {
+      "component": "aws-ghtokens",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-ghtokens",
       "release-type": "terraform-module",
       "separatePullRequests": false
     },

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-//MISE description="Generate release-please configuration for all terraform modules"
+//MISE description="Generate release-please configuration for all terraform modules and bun apps"
 
 import { readdir, readFile, writeFile } from "fs/promises";
 import { existsSync } from "fs";
@@ -8,6 +8,7 @@ import { join } from "path";
 const RELEASE_CONFIG_FILE = "release-please-config.json";
 const RELEASE_MANIFEST_FILE = ".release-please-manifest.json";
 const MODULES_DIR = "modules";
+const APPS_DIR = "apps";
 
 async function loadJsonFile(filepath: string): Promise<Record<string, any>> {
   if (existsSync(filepath)) {
@@ -63,10 +64,34 @@ async function discoverModules(): Promise<string[]> {
     }
   } catch (e) {
     console.error("Failed to read modules directory:", e);
-    process.exit(1);
+    // Don't exit, might just not exist
   }
 
   return modules.sort();
+}
+
+async function discoverApps(): Promise<string[]> {
+  const apps: string[] = [];
+
+  try {
+    const appNames = await readdir(APPS_DIR);
+    for (const appName of appNames) {
+      const appPath = join(APPS_DIR, appName);
+      try {
+        const stat = await Bun.file(appPath).stat();
+        if (stat.isDirectory()) {
+          apps.push(appName);
+        }
+      } catch (e) {
+        // Skip if can't read app dir
+      }
+    }
+  } catch (e) {
+    console.error("Failed to read apps directory:", e);
+    // Don't exit, might just not exist
+  }
+
+  return apps.sort();
 }
 
 async function main() {
@@ -84,10 +109,12 @@ async function main() {
     manifest["."] = "0.0.0";
   }
 
-  // Discover modules
+  // Discover modules and apps
   const modules = await discoverModules();
+  const apps = await discoverApps();
 
-  console.log(`Found ${modules.length} terraform modules:`);
+  console.log(`Found ${modules.length} terraform modules.`);
+  console.log(`Found ${apps.length} bun apps.\n`);
 
   let newCount = 0;
   let existingCount = 0;
@@ -119,6 +146,32 @@ async function main() {
     };
   }
 
+  for (const app of apps) {
+    const packagePath = `apps/${app}`;
+    const component = app;
+
+    // Add to manifest if not exists
+    if (!manifest[packagePath]) {
+      manifest[packagePath] = "0.0.0";
+      newCount++;
+      console.log(`  + ${packagePath} (new)`);
+    } else {
+      existingCount++;
+      console.log(`  • ${packagePath} (existing)`);
+    }
+
+    // Update config
+    config.packages[packagePath] = {
+      "release-type": "node",
+      component: component,
+      draft: false,
+      prerelease: false,
+      pullRequestHeader: `App Release: ${component}`,
+      includeComponentInTag: true,
+      separatePullRequests: false
+    };
+  }
+
   // Sort manifest keys
   const sortedManifest: Record<string, string> = {};
   Object.keys(manifest)
@@ -132,8 +185,8 @@ async function main() {
   await saveJsonFile(RELEASE_MANIFEST_FILE, sortedManifest);
 
   console.log(`\nConfiguration updated!`);
-  console.log(`  • ${newCount} new module(s) added`);
-  console.log(`  • ${existingCount} existing module(s) preserved`);
+  console.log(`  • ${newCount} new package(s) added`);
+  console.log(`  • ${existingCount} existing package(s) preserved`);
   console.log(`  • ${Object.keys(config.packages).length} total packages configured`);
 }
 

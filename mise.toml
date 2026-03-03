@@ -32,6 +32,3 @@ run = "tofu fmt -recursive"
 description = "Format Terramate files"
 alias = ["fmt:terramate"]
 run = "terramate fmt"
-
-[tasks."generate:release-please"]
-description = "Generate release-please configuration for all terraform modules"
