@@ -7,8 +7,16 @@ terramate = "0.16.0"
 buf = "latest"
 terraform-docs = "latest"
 
+[env]
+SERVICE = "ghtokens"
+
 [settings]
 experimental = true
+
+[tasks.compose]
+description = "Docker compose passthrough"
+alias = ["c"]
+run = "docker compose -f apps/{{env.SERVICE}}/compose/docker-compose.yaml"
 
 [tasks.format]
 description = "Format all code"
