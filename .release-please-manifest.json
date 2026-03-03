@@ -1,10 +1,12 @@
 {
   ".": "0.0.0",
+  "apps/ghtokens": "0.0.0",
   "modules/aws/account": "0.0.0",
   "modules/aws/account-acm": "0.0.0",
   "modules/aws/account-bootstrap-iam": "0.0.0",
   "modules/aws/account-networking": "0.0.0",
   "modules/aws/eks-gha-runners": "0.0.0",
+  "modules/aws/ghtokens": "0.0.0",
   "modules/aws/github-actions-role": "0.0.0",
   "modules/aws/iam-role": "0.0.0",
   "modules/aws/identity-center": "0.0.0",
