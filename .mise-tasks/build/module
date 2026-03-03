@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-// MISE description="Build a Terraform module and resolve its dependencies"
-// USAGE mise run build:module <module-path> [version]
+//MISE description="Build a Terraform module and resolve its dependencies"
+//USAGE mise run build:module <module-path> [version]
 
 import { $, Glob } from "bun";
 

@@ -46,6 +46,9 @@ You are a technical architect and OpenTofu expert responsible for implementing a
    - Run `tofu init -backend=false` inside the module's directory if you haven't already.
    - Execute `tofu test` in the module directory to verify the tests pass. Fix any failing tests or configuration issues before concluding the task.
 
+9. **Generate Stack Configuration**:
+   - Run `mise run create:module-stack <module-path>` (e.g., `mise run create:module-stack modules/aws/iam-role`) to ensure the module is registered as a Terramate stack and receives its `stack.tm.hcl` configuration file.
+
 ## Guidelines
 
 - **Agent Guardrails**: Before writing the module, search for and read the nearest `AGENTS.md` file (e.g., in the module's directory or the parent `modules/` directory). Follow all rules explicitly defined there.

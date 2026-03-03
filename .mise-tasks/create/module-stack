@@ -1,0 +1,82 @@
+#!/usr/bin/env bun
+//MISE description="Create a terramate stack for a module"
+
+import { existsSync, readFileSync, writeFileSync, statSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import crypto from 'node:crypto';
+
+const modulePath = process.argv[2];
+
+if (!modulePath) {
+  console.error("Error: Module path is required.");
+  console.error("Usage: mise run create:module-stack <module_path>");
+  process.exit(1);
+}
+
+// Remove trailing and leading slashes if any
+const normalizedPath = modulePath.replace(/^\/+|\/+$/g, '');
+
+if (!existsSync(normalizedPath) || !statSync(normalizedPath).isDirectory()) {
+  console.error(`Error: Directory '${normalizedPath}' does not exist.`);
+  process.exit(1);
+}
+
+const stackFile = `${normalizedPath}/stack.tm.hcl`;
+
+if (existsSync(stackFile)) {
+  console.log(`Stack file already exists at ${stackFile}`);
+  process.exit(0);
+}
+
+// Name: replace / with |
+const name = normalizedPath.replace(/\//g, '|');
+
+// Description: open
+const description = `Stack for ${normalizedPath}`;
+
+// Convert path segments to a Terramate array format
+const segments = normalizedPath.split('/');
+const tagsArray = segments.map(s => `"${s}"`).join(', ');
+
+// UUIDv5 generation using URL namespace (6ba7b811-9dad-11d1-80b4-00c04fd430c8)
+const ns = Buffer.from('6ba7b8119dad11d180b400c04fd430c8', 'hex');
+const nameBuf = Buffer.from(normalizedPath);
+const hash = crypto.createHash('sha1').update(ns).update(nameBuf).digest();
+
+// Set version (5) and variant (RFC4122)
+hash[6] = (hash[6] & 0x0f) | 0x50;
+hash[8] = (hash[8] & 0x3f) | 0x80;
+
+const hex = hash.toString('hex');
+const uuid = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+
+console.log(`Creating Terramate stack in ${normalizedPath} with ID ${uuid}`);
+
+const terramateCreate = spawnSync('terramate', [
+  'create',
+  normalizedPath,
+  `--name=${name}`,
+  `--description=${description}`,
+  `--id=${uuid}`
+], { stdio: 'inherit' });
+
+if (terramateCreate.status !== 0) {
+  console.error(`Error creating terramate stack: ${terramateCreate.error?.message || 'terramate command failed'}`);
+  process.exit(terramateCreate.status || 1);
+}
+
+// Insert tags before the closing brace
+try {
+  let content = readFileSync(stackFile, 'utf8');
+  content = content.replace(/}/, `  tags        = [${tagsArray}]\n}`);
+  writeFileSync(stackFile, content, 'utf8');
+  console.log(`Stack created successfully with tags: [${tagsArray}]`);
+
+  const fmt = spawnSync('terramate', ['fmt', stackFile], { stdio: 'inherit' });
+  if (fmt.status !== 0) {
+     console.error("Warning: terramate fmt failed");
+  }
+} catch (err) {
+  console.error(`Error updating or formatting stack file: ${err.message}`);
+  process.exit(1);
+}

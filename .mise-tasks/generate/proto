@@ -1,24 +1,34 @@
-#!/usr/bin/env bash
-# description: Generate JavaScript packages based off the proto files for each service
+#!/usr/bin/env bun
+//MISE description="Generate JavaScript packages based off the proto files for each service"
 
-set -e
+import { $ } from "bun";
+import { readdirSync, statSync, rmdirSync, mkdirSync } from "fs";
+import { join } from "path";
 
-# Change into the proto directory where the central buf.yaml and buf.gen.yaml live
-cd proto
+// Change into the proto directory where the central buf.yaml and buf.gen.yaml live
+const protoDir = join(process.cwd(), "proto");
 
-for dir in */; do
-  # Remove trailing slash
-  dir="${dir%/}"
+try {
+  process.chdir(protoDir);
+} catch (error) {
+  console.error(`Failed to change directory to ${protoDir}`, error);
+  process.exit(1);
+}
+
+const entries = readdirSync(".");
+
+for (const entry of entries) {
+  const isDir = statSync(entry).isDirectory();
   
-  if [ -d "$dir" ]; then
-    echo "Generating $dir..."
-    out_dir="../gen/${dir}/src/gen"
+  if (isDir) {
+    console.log(`Generating ${entry}...`);
+    const outDir = join("..", "gen", entry, "src", "gen");
     
-    # Clean the old files and recreate the directory
-    rm -rf "$out_dir"
-    mkdir -p "$out_dir"
+    // Clean the old files and recreate the directory
+    await $`rm -rf ${outDir}`;
+    await $`mkdir -p ${outDir}`;
     
-    # Use the central buf.gen.yaml and direct output to the target gen directory
-    buf generate --path "$dir" --template buf.gen.yaml --output "$out_dir"
-  fi
-done
+    // Use the central buf.gen.yaml and direct output to the target gen directory
+    await $`buf generate --path ${entry} --template buf.gen.yaml --output ${outDir}`;
+  }
+}
