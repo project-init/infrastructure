@@ -1,17 +1,17 @@
 {
   ".": "0.0.0",
-  "modules/aws/account": "0.0.0",
+  "modules/aws/account": "0.1.0",
   "modules/aws/account-acm": "0.0.0",
-  "modules/aws/account-bootstrap-iam": "0.0.0",
+  "modules/aws/account-bootstrap-iam": "0.1.0",
   "modules/aws/account-networking": "0.0.0",
   "modules/aws/eks-gha-runners": "0.0.0",
-  "modules/aws/github-actions-role": "0.0.0",
-  "modules/aws/iam-role": "0.0.0",
-  "modules/aws/identity-center": "0.0.0",
-  "modules/aws/ipam": "0.0.0",
-  "modules/aws/platform-bootstrap-iam": "0.0.0",
-  "modules/aws/platform-dns": "0.0.0",
+  "modules/aws/github-actions-role": "0.1.0",
+  "modules/aws/iam-role": "0.1.0",
+  "modules/aws/identity-center": "0.1.0",
+  "modules/aws/ipam": "0.1.0",
+  "modules/aws/platform-bootstrap-iam": "0.1.0",
+  "modules/aws/platform-dns": "0.1.0",
   "modules/aws/platform-networking": "0.0.0",
-  "modules/github/repository": "0.0.0",
-  "modules/github/team": "0.0.0"
+  "modules/github/repository": "0.1.0",
+  "modules/github/team": "0.1.0"
 }
