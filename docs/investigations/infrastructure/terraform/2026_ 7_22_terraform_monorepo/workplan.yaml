@@ -1,13 +1,91 @@
-jiraIssue: JIRA-1234
+jiraIssue: JIRA-685
 
 project: INIT
 
-# labels:
-#  - "triaged"
+labels:
+  - "triaged"
+  - "infrastructure"
+  - "terraform"
+  - "investigation"
 
 epics:
-  - summary: "Epic Summary"
-    description: "Epic Description"
+  - summary: "Terraform mono repo - module audit and directory structure"
+    description: >
+      Audit the 17 existing terraform module repos under the project-init GitHub org,
+      determine which are actively consumed, and define the directory structure for
+      housing them in the infrastructure mono repo alongside the 14 modules already
+      present. The directory structure must also account for non-terraform assets
+      already in the repo (apps/, packages/, proto/, gen/) and future CLI tooling.
     tasks:
-      - summary: "Task Summary"
-        description: "Task Description"
+      - summary: "Audit registry module repos for active usage"
+        description: >
+          Cross-reference the 17 terraform-aws-* repos against module source
+          declarations in admin-platform, business-platform, and data-platform to
+          determine which modules are actively consumed and at what versions. Flag
+          any modules that appear unused or legacy. Produce a prioritized list of
+          modules to import.
+      - summary: "Define the directory structure for incoming modules"
+        description: >
+          Determine how the 17 incoming modules map into the existing modules/aws/
+          and modules/github/ layout. Ensure naming is consistent with the modules
+          already present (e.g., modules/aws/rds, modules/aws/cognito). Document
+          any naming or structural decisions. Account for coexistence with
+          non-terraform assets and CLI tooling in the repo.
+      - summary: "Import the first module into the mono repo"
+        description: >
+          Select one actively-used module (e.g., terraform-aws-rds) and import its
+          code into the mono repo under the defined directory structure. Add the
+          module to the release-please configuration with per-module versioning.
+          Verify the module passes linting and any existing CI checks.
+  - summary: "Terraform mono repo - release and sync pipeline"
+    description: >
+      Build an automated pipeline that, when a module version is released from the
+      infrastructure mono repo, syncs the updated module code to its corresponding
+      terraform-aws-* repo and creates a semver git tag so the Terraform/OpenTofu
+      registry picks up the new version. Validate end-to-end with the first imported
+      module.
+    tasks:
+      - summary: "Implement mono-repo-to-individual-repo sync mechanism"
+        description: >
+          Build a GitHub Actions workflow (and/or mise task) that detects which
+          module was released, copies the module code to the corresponding
+          terraform-aws-* repo, and creates a semver git tag for registry publishing.
+          Determine the right approach (subtree split, direct copy + push, or
+          another method). Ensure only changed modules trigger a sync.
+      - summary: "Extend release-please config for imported modules"
+        description: >
+          Add the newly imported module(s) to release-please-config.json and
+          .release-please-manifest.json with per-module versioning. Verify that
+          release-please generates correct changelogs and version bumps scoped to
+          individual modules. Confirm the tag format avoids collisions across all
+          modules in the repo (e.g., aws-rds-v1.0.0).
+      - summary: "Validate end-to-end release flow with one module"
+        description: >
+          Perform a release of the first imported module from the mono repo. Confirm
+          the sync mechanism pushes code to the individual terraform-aws-* repo,
+          creates the correct semver tag, and the Terraform/OpenTofu registry
+          reflects the new version. Document the release workflow.
+  - summary: "Terraform mono repo - remaining module migration"
+    description: >
+      With the release pipeline validated on one module, import the remaining
+      actively-used modules, confirm consuming repos are unaffected, and document
+      the workflow for ongoing use.
+    tasks:
+      - summary: "Import remaining actively-used modules"
+        description: >
+          Batch-import the remaining prioritized modules into the mono repo under
+          the established directory structure. Add each to the release-please
+          configuration. Run CI checks against all imported modules.
+      - summary: "Validate consuming repos require no changes"
+        description: >
+          Confirm that admin-platform, business-platform, and data-platform continue
+          to resolve modules via their existing registry source addresses
+          (e.g., source = "project-init/secret/aws") without any modifications.
+          The individual terraform-aws-* repos and registry entries remain as the
+          public interface.
+      - summary: "Document the mono repo module workflow"
+        description: >
+          Document how to add a new module, update an existing module, and perform
+          a release from the mono repo. Include the directory conventions, release-please
+          workflow, sync mechanism, and any mise tasks involved. Add to the repo
+          README or a dedicated docs/ page.

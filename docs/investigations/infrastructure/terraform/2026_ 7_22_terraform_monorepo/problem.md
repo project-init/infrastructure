@@ -95,7 +95,7 @@ validate the approach end-to-end with a single module before scaling to all.
    structure and release process should accommodate this alongside terraform modules.
 
 8. Identify any private terraform modules that should be made public as a separate
-   follow-up investigation, rather than bundling that discovery into this effort.
+   follow-up investigation.
 
 ## Knowns
 
