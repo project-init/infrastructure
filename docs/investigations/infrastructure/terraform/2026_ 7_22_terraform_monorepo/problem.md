@@ -10,9 +10,7 @@ There are 17 separate public repositories housing individual Terraform modules. 
 
 ## Useful Context
 
-There are currently 17 separate public terraform module repositories under the
-`project-init` GitHub organization, all following the `terraform-aws-<name>` naming
-convention required by the Terraform/OpenTofu registry:
+There are currently 17 separate public terraform module repositories under the `project-init` GitHub organization, all following the `terraform-aws-<name>` naming convention required by the Terraform/OpenTofu registry:
 
 - terraform-aws-rds
 - terraform-aws-rds-migration-task
@@ -32,85 +30,47 @@ convention required by the Terraform/OpenTofu registry:
 - terraform-aws-cognito
 - terraform-aws-ec2-backed-ecs
 
-These modules are consumed by application repos ( like admin-platform, business-platform,
-data-platform) via registry short-form source addresses like
-`source = "project-init/secret/aws"` with pinned versions.
+These modules are consumed by application repos ( like admin-platform, business-platform, data-platform) via registry short-form source addresses like `source = "project-init/secret/aws"` with pinned versions.
 
-The `project-init/infrastructure` repo already exists as a partial mono repo with 14
-modules under `modules/aws/` and `modules/github/`, managed by Terramate for stack
-orchestration and release-please for versioning. All are at v0.0.0 (never released).
-The modules currently in the mono repo (e.g., account, identity-center, ipam,
-platform-dns) are different from the ones published to the registry -- there is no
-overlap yet.
+The `project-init/infrastructure` repo already exists as a partial mono repo with 14 modules under `modules/aws/` and `modules/github/`, managed by Terramate for stack orchestration and release-please for versioning. All are at v0.0.0 (never released). The modules currently in the mono repo (e.g., account, identity-center, ipam, platform-dns) are different from the ones published to the registry -- there is no overlap yet.
 
-The Terraform and OpenTofu public registries require each module to live in its own
-GitHub repository named `terraform-<PROVIDER>-<NAME>`, with semver git tags for
-releases. This means the mono repo cannot directly replace the individual repos for
-registry publishing. The mono repo must serve as the development source of truth, with
-an automated release process that syncs module code out to the individual repos and
-tags them for registry pickup.
+The Terraform and OpenTofu public registries require each module to live in its own GitHub repository named `terraform-<PROVIDER>-<NAME>`, with semver git tags for releases. This means the mono repo cannot directly replace the individual repos for registry publishing. The mono repo must serve as the development source of truth, with an automated release process that syncs module code out to the individual repos and tags them for registry pickup.
 
-The toolchain is OpenTofu (not HashiCorp Terraform), though some older lock files
-still reference `registry.terraform.io`. The repo also houses non-terraform assets
-(apps/, packages/, proto/, gen/), so the directory structure must account for
-coexistence with other tooling.
+The toolchain is OpenTofu (not HashiCorp Terraform), though some older lock files still reference `registry.terraform.io`. The repo also houses non-terraform assets (apps/, packages/, proto/, gen/), so the directory structure must account for coexistence with other tooling.
 
 ## Suggested Solution
 
-Consolidate the 17 separate terraform module repos into the existing
-`project-init/infrastructure` mono repo, establish an automated release pipeline
-that syncs changes back to the individual repos for registry compatibility, and
-validate the approach end-to-end with a single module before scaling to all.
+Consolidate the 17 separate terraform module repos into the existing `project-init/infrastructure` mono repo, establish an automated release pipeline using `git subtree split` to sync changes back to the individual repos for registry compatibility, and validate the approach end-to-end with a single module before scaling to all.
+
 
 ### Details
 
-1. Define the directory structure for housing both the existing 14 mono repo modules
-   and the 17 incoming registry modules under `modules/`, organized by provider
-   (e.g., `modules/aws/<name>`, `modules/github/<name>`). Ensure coexistence with
-   non-terraform assets already in the repo (apps/, packages/, proto/, gen/).
+1. Define the directory structure for housing both the existing 14 mono repo modules and the 17 incoming registry modules under `modules/`, organized by provider (e.g., `modules/aws/<name>`, `modules/github/<name>`). Ensure coexistence with non-terraform assets already in the repo (apps/, packages/, proto/, gen/) and future CLI tooling.
 
-2. Audit the 17 registry module repos to confirm which are actively used and should
-   be brought in first. Cross-reference against module sources in other projects to prioritize actively consumed modules.
+2. Audit the 17 registry module repos to confirm which are actively used and should be brought in first. Cross-reference against module sources in admin-platform, business-platform, and data-platform to prioritize actively consumed modules.
 
-3. Build an automated release and sync mechanism (likely GitHub Actions + mise) that,
-   on a mono repo release, pushes updated module code to its corresponding
-   `terraform-aws-<name>` repo and creates a semver git tag so the Terraform/OpenTofu
-   registry picks up the new version.
+3. Build an automated release and sync mechanism using `git subtree split` in a GitHub Actions workflow. On a release-please version bump for a module, the workflow splits the module subdirectory (e.g., `modules/aws/rds`) into a standalone branch preserving commit history, pushes it to the corresponding `terraform-aws-<name>` repo, and creates a semver git tag so the Terraform/OpenTofu registry picks up the new version. `git subtree split` is built into git, requires no external dependencies, and produces deterministic output. If performance becomes an issue at scale, `splitsh-lite` is a drop-in replacement that produces identical output.
 
-4. Extend the existing release-please configuration to cover the newly imported
-   modules with per-module versioning, tying version bumps to the sync/publish step
-   so only changed modules get new releases.
+4. Extend the existing release-please configuration to cover the newly imported modules with per-module versioning, tying version bumps to the sync/publish step so only changed modules get new releases.
 
 5. Validate the full workflow end-to-end with one module (e.g., terraform-aws-rds):
-   import the code, perform a release from the mono repo, confirm the individual repo
-   is updated and the registry reflects the new version. If it works for one, it should work
-   for all.
+   import the code, perform a release from the mono repo, confirm `git subtree split` pushes the code to the individual repo with the correct tag, and verify the registry reflects the new version.
 
-6. Confirm that consuming repos (admin-platform, business-platform, data-platform)
-   require no source changes, since the individual repos and registry entries remain
-   intact as the public interface.
+6. Confirm that consuming repos (admin-platform, business-platform, data-platform) require no source changes, since the individual repos and registry entries remain intact as the public interface.
 
-7. Account for CLI and tooling coexistence. The mono repo is intended to also house
-   tools that interact with infrastructure modules (e.g., CLIs). The directory
-   structure and release process should accommodate this alongside terraform modules.
+7. Account for CLI and tooling coexistence. The mono repo is intended to also house tools that interact with infrastructure modules (e.g., CLIs). The directory structure and release process should accommodate this alongside terraform modules.
 
-8. Identify any private terraform modules that should be made public as a separate
-   follow-up investigation.
+8. Identify any private terraform modules that should be made public as a separate follow-up investigation, rather than bundling that discovery into this effort.
 
 ## Knowns
 
 * There are 17 separate public terraform module repos under the project-init GitHub org.
-* The infrastructure mono repo already exists with 14 modules, Terramate, and
-  release-please configured (all at v0.0.0, never released).
-* The Terraform/OpenTofu public registry requires one module per repo with the naming
-  convention `terraform-<PROVIDER>-<NAME>` and semver git tags for releases.
-* The individual `terraform-aws-*` repos must continue to exist for registry
-  compatibility -- the mono repo cannot replace them as the registry source.
-* The existing modules in the mono repo and the registry-published modules have no
-  overlap.
+* The infrastructure mono repo already exists with 14 modules, Terramate, and release-please configured (all at v0.0.0, never released).
+* The Terraform/OpenTofu public registry requires one module per repo with the naming convention `terraform-<PROVIDER>-<NAME>` and semver git tags for releases.
+* The individual `terraform-aws-*` repos must continue to exist for registry compatibility -- the mono repo cannot replace them as the registry source.
+* The existing modules in the mono repo and the registry-published modules have no overlap.
 * The toolchain is OpenTofu.
-* Consuming repos use registry short-form source addresses
-  (e.g., `source = "project-init/secret/aws"`).
+* Consuming repos use registry short-form source addresses (e.g., `source = "project-init/secret/aws"`).
 
 ## Assumptions
 
