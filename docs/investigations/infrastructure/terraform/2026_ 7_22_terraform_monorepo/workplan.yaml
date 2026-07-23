@@ -44,7 +44,7 @@ epics:
           Import each remaining module in its own PR, following the pattern established by the first import. Add each to the release-please configuration. Run CI checks against all imported modules.
       - summary: "Validate consuming repos require no changes"
         description: >
-          For each migrated module, publish a patch version bump from the mono repo pipeline (e.g., if terraform-aws-rds is at v0.3.0, release v0.3.1 via the mono repo). Confirm git subtree split pushes the code to the individual terraform-aws-* repo, the registry picks up the new version, and then update the consuming repos (admin-platform, business-platform, data-platform) to use the new version. This actively proves the full pipeline works end-to-end rather than passively assuming existing versions still resolve.
+          For each migrated module, publish a patch version bump from the mono repo pipeline (e.g., if terraform-aws-rds is at v0.3.0, release v0.3.1 via the mono repo). Confirm git subtree split pushes the code to the individual terraform-aws-* repo, the registry picks up the new version, and then update the consuming repos to use the new version. This actively proves the full pipeline works end-to-end rather than passively assuming existing versions still resolve.
       - summary: "Document the mono repo module workflow"
         description: >
           Document how to add a new module, update an existing module, and perform a release from the mono repo. Include the directory conventions, release-please workflow, git subtree split sync mechanism, and any mise tasks involved. Add to the repo README or a dedicated docs/ page.
