@@ -1,10 +1,13 @@
-jiraIssue: JIRA-685
-project: INIT
+jiraIssue: https://project-init.atlassian.net/browse/INIT-685
+
+prooject: INIT
+
 labels:
   - "triaged"
   - "infrastructure"
   - "terraform"
   - "investigation"
+
 epics:
   - summary: "Terraform mono repo - module audit and directory structure"
     description: >

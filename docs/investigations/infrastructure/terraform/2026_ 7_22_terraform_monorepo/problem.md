@@ -82,8 +82,6 @@ Consolidate the 17 separate terraform module repos into the existing `project-in
 
 ## Unknowns
 
-* The exact mechanism for syncing code from the mono repo to individual repos on
-  release (subtree split, GitHub Actions copy, or another approach).
 * Whether any of the 17 module repos are legacy/unused and can be excluded.
 * How per-module version tracking works when a shared dependency (e.g., AWS provider) is updated -- does every module get a version bump, or only affected ones?
 * What the release-please tag format should be to avoid collisions across 30+ modules in one repo (e.g., `aws-rds-v1.0.0` vs `v1.0.0`).
