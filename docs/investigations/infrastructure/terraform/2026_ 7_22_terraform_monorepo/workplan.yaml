@@ -1,6 +1,6 @@
 jiraIssue: https://project-init.atlassian.net/browse/INIT-685
 
-prooject: INIT
+project: INIT
 
 labels:
   - "triaged"
