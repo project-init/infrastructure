@@ -1,38 +1,8 @@
 [tools]
 opentofu = "1.11.4"
 awscli = "latest"
-opencode = "1.2.10"
-bun = "1.3.9"
-terramate = "0.16.0"
-buf = "latest"
 terraform-docs = "latest"
-"github:project-init/devex" = "0.14.1"
-
-[env]
-SERVICE = "ghtokens"
+"github:project-init/devex" = "0.15.0"
 
 [settings]
 experimental = true
-
-[tasks.compose]
-description = "Docker compose passthrough"
-alias = ["c"]
-run = "docker compose -f apps/{{env.SERVICE}}/compose/docker-compose.yaml"
-
-[tasks.format]
-description = "Format all code"
-alias = ["fmt"]
-depends = ["format:*"]
-
-[tasks."format:tofu"]
-description = "Format OpenTofu code recursively"
-alias = ["fmt:tofu"]
-run = "tofu fmt -recursive"
-
-[tasks."format:terramate"]
-description = "Format Terramate files"
-alias = ["fmt:terramate"]
-run = "terramate fmt"
-
-[tasks."generate:release-please"]
-description = "Generate release-please configuration for all terraform modules"
