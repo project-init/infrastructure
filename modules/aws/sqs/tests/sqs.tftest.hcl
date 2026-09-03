@@ -35,6 +35,14 @@ run "defaults" {
     condition     = output.queue_url == aws_sqs_queue.this.url && output.queue_arn == aws_sqs_queue.this.arn && output.receiver_policy_json == data.aws_iam_policy_document.receiver.json
     error_message = "The module must expose the source queue URL, source queue ARN, and receiver policy."
   }
+  assert {
+    condition = (
+      length(output.env_variables) == 1
+      && output.env_variables[0].name == "SQS_QUEUE_URL"
+      && output.env_variables[0].value == aws_sqs_queue.this.url
+    )
+    error_message = "This module must expose the queue URL as SQS_QUEUE_URL"
+  }
 }
 
 run "dlq_disabled" {

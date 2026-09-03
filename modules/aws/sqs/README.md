@@ -57,6 +57,8 @@ environment_variables = {
 }
 ```
 
+The `env_variables` output provides the same mapping as a ready-to-inject list of `name` and `value` objects.
+
 The other primary integration outputs have infrastructure-specific consumers:
 
 - Use `queue_arn` as the EventBridge target ARN.
@@ -123,6 +125,7 @@ SQS has no native message-to-CloudWatch-Logs delivery. Account-wide CloudTrail d
 | `alarm_arns`                             | Created alarm ARNs keyed by alarm type.             |
 | `sender_policy_json`                     | IAM policy for sending and, when needed, KMS use.   |
 | `receiver_policy_json`                   | IAM policy for consuming and, when needed, KMS use. |
+| `env_variables`                          | Runtime environment variables for the SQS config.   |
 
 ## Requirements
 

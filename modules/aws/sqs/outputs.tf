@@ -41,3 +41,12 @@ output "receiver_policy_json" {
   description = "IAM policy JSON granting message-consumer and required customer-managed KMS key permissions."
   value       = data.aws_iam_policy_document.receiver.json
 }
+
+output "env_variables" {
+  value = [
+    {
+      name  = "SQS_QUEUE_URL"
+      value = aws_sqs_queue.this.url
+    }
+  ]
+}
