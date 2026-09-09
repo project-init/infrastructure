@@ -6,38 +6,11 @@ The module exposes queue identifiers and IAM policy documents so deployment code
 
 ## Usage
 
-```hcl
-module "database_events_queue" {
-  source  = "project-init/sqs/aws"
-  version = "0.1.0"
+See the [EventBridge example](examples/eventbridge/main.tf) for module usage.
 
-  name                       = "database-events"
-  visibility_timeout_seconds = 120
-  max_receive_count          = 5
-
-  additional_policy_statements = [{
-    sid     = "AllowEventBridge"
-    actions = ["sqs:SendMessage"]
-    principals = [{
-      type        = "Service"
-      identifiers = ["events.amazonaws.com"]
-    }]
-    conditions = [{
-      test     = "ArnEquals"
-      variable = "aws:SourceArn"
-      values   = [module.business_events_bus.rule_arns["database"]]
-    }]
-  }]
-
-  alarm_actions = [module.platform_alerts.sns_topic_arn]
-  ok_actions    = [module.platform_alerts.sns_topic_arn]
-
-  tags = {
-    Team    = "DataPlatform"
-    Project = "events-api"
-  }
-}
-```
+The example requires an existing EventBridge rule ARN and SNS alarm topic ARN.
+Configure the AWS provider for your target account and Region before running it.
+The deployment layer must also configure the EventBridge target to send events to the queue.
 
 ## Behavior
 
@@ -86,53 +59,8 @@ The module can alarm on visible DLQ messages and the age of the oldest source me
 
 SQS has no native message-to-CloudWatch-Logs delivery. Account-wide CloudTrail data events and application processing logs remain caller responsibilities.
 
-## Inputs
-
-| Name                                | Type           |   Default | Required | Description                                       |
-| ----------------------------------- | -------------- | --------: | :------: | ------------------------------------------------- |
-| `name`                              | `string`       |         — |   Yes    | Standard queue name and resource prefix.          |
-| `tags`                              | `map(string)`  |      `{}` |    No    | Additional tags; caller values take precedence.   |
-| `message_retention_seconds`         | `number`       |  `345600` |    No    | Source retention, 60–1,209,600 seconds.           |
-| `visibility_timeout_seconds`        | `number`       |      `30` |    No    | Visibility timeout, 0–43,200 seconds.             |
-| `max_message_size_bytes`            | `number`       |  `262144` |    No    | Maximum message size, 1,024–262,144 bytes.        |
-| `delay_seconds`                     | `number`       |       `0` |    No    | Default delivery delay, 0–900 seconds.            |
-| `receive_wait_time_seconds`         | `number`       |       `0` |    No    | Long-polling wait, 0–20 seconds.                  |
-| `enable_dlq`                        | `bool`         |    `true` |    No    | Create and attach a module-managed DLQ.           |
-| `max_receive_count`                 | `number`       |       `5` |    No    | Receives before redrive when a DLQ is configured. |
-| `dlq_message_retention_seconds`     | `number`       | `1209600` |    No    | Module-created DLQ retention.                     |
-| `dlq_arn`                           | `string`       |    `null` |    No    | Existing DLQ ARN used when `enable_dlq = false`.  |
-| `kms_key_arn`                       | `string`       |    `null` |    No    | Existing customer-managed KMS key ARN.            |
-| `create_kms_key`                    | `bool`         |    `true` |    No    | Create a dedicated customer-managed key.          |
-| `kms_key_deletion_window_in_days`   | `number`       |      `30` |    No    | Created key deletion window, 7–30 days.           |
-| `kms_data_key_reuse_period_seconds` | `number`       |     `300` |    No    | KMS data-key reuse period, 60–86,400 seconds.     |
-| `sender_principal_arns`             | `list(string)` |      `[]` |    No    | AWS principals allowed to send messages.          |
-| `additional_policy_statements`      | `list(object)` |      `[]` |    No    | Additional source queue policy statements.        |
-| `enable_alarms`                     | `bool`         |    `true` |    No    | Enable queue-age and DLQ-depth alarms.            |
-| `alarm_actions`                     | `list(string)` |      `[]` |    No    | ARNs notified on ALARM.                           |
-| `ok_actions`                        | `list(string)` |      `[]` |    No    | ARNs notified on recovery.                        |
-| `alarm_evaluation_periods`          | `number`       |       `1` |    No    | Alarm evaluation periods.                         |
-| `alarm_period_seconds`              | `number`       |     `300` |    No    | Alarm period in seconds.                          |
-| `dlq_depth_alarm_threshold`         | `number`       |       `1` |    No    | Visible DLQ messages that trigger an alarm.       |
-| `queue_age_alarm_threshold_seconds` | `number`       |    `3600` |    No    | Oldest source-message age; null disables it.      |
-
-## Outputs
-
-| Name                                     | Description                                         |
-| ---------------------------------------- | --------------------------------------------------- |
-| `queue_arn` / `queue_url` / `queue_name` | Source queue identifiers.                           |
-| `dlq_arn` / `dlq_url` / `dlq_name`       | Configured DLQ identifiers, or null.                |
-| `kms_key_arn`                            | Customer-managed key ARN, or null for SSE-SQS.      |
-| `alarm_arns`                             | Created alarm ARNs keyed by alarm type.             |
-| `sender_policy_json`                     | IAM policy for sending and, when needed, KMS use.   |
-| `receiver_policy_json`                   | IAM policy for consuming and, when needed, KMS use. |
-| `env_variables`                          | Runtime environment variables for the SQS config.   |
-
-## Requirements
-
-| Name               | Version    |
-| ------------------ | ---------- |
-| OpenTofu/Terraform | `>= 1.3.0` |
-| AWS provider       | `~> 6.0`   |
+<!-- BEGIN_TF_DOCS -->
+<!-- END_TF_DOCS -->
 
 The caller supplies the AWS provider configuration. The module contains no provider block.
 
