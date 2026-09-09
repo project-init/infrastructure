@@ -43,6 +43,7 @@ output "receiver_policy_json" {
 }
 
 output "env_variables" {
+  description = "Environment variables containing SQS_QUEUE_URL for the source queue."
   value = [
     {
       name  = "SQS_QUEUE_URL"
