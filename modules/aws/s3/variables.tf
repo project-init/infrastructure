@@ -22,6 +22,20 @@ variable "tags" {
   nullable    = false
 }
 
+variable "force_destroy" {
+  description = "Whether Terraform may delete the bucket when it still contains objects."
+  type        = bool
+  default     = false
+  nullable    = false
+}
+
+variable "versioning_enabled" {
+  description = "Whether S3 object versioning is enabled."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "lifecycle_rules" {
   description = "Enabled prefix-based lifecycle rules. Retention choices belong to the caller."
   type = list(object({

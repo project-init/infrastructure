@@ -8,12 +8,12 @@ Glue, and EventBridge remain caller responsibilities.
 
 ## Behavior
 
-- Versioning enabled.
+- Versioning enabled by default and configurable with `versioning_enabled`.
 - Default encryption uses `AES256`, with `blocked_encryption_types = ["NONE"]`.
 - Bucket policy requires HTTPS.
 - Bucket ownership is `BucketOwnerEnforced`; object ACLs are disabled.
 - All four public-access-block settings enabled.
-- `force_destroy = false`: deletion does not automatically empty the bucket.
+- `force_destroy = false` by default; callers may explicitly enable destructive deletion.
 - No IAM user created.
 - Context and explicit tags retain Cloud Posse's merging behavior.
   The wrapper adds no tags.
@@ -73,6 +73,8 @@ expiration, and 7 days each for noncurrent expiration and multipart cleanup.
 | `name` | `string` | Required | Complete bucket name; must satisfy AWS bucket naming rules. |
 | `context` | `any` | Required | Complete Cloud Posse label context, normally a label module's `context` output. An empty object is not supported. |
 | `tags` | `map(string)` | `{}` | Additional tags merged by Cloud Posse. |
+| `force_destroy` | `bool` | `false` | Whether Terraform may delete a bucket that still contains objects. |
+| `versioning_enabled` | `bool` | `true` | Whether S3 object versioning is enabled. |
 | `lifecycle_rules` | `list(object)` | `[]` | Enabled prefix-based lifecycle rules. |
 
 Each lifecycle rule requires:
@@ -91,6 +93,7 @@ Each lifecycle rule requires:
 | --- | --- |
 | `bucket_id` | Bucket name. |
 | `bucket_arn` | Bucket ARN. |
+| `env_variables` | Runtime environment variables containing `S3_BUCKET`. |
 
 ## Requirements
 

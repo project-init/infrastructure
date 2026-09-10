@@ -67,6 +67,15 @@ run "valid_configuration" {
   }
 }
 
+run "configurable_bucket_behavior" {
+  command = plan
+
+  variables {
+    force_destroy      = true
+    versioning_enabled = false
+  }
+}
+
 run "reject_short_name" {
   command = plan
 
@@ -126,6 +135,15 @@ run "bucket_outputs" {
   assert {
     condition     = output.bucket_id == "event-analytics-test-123456789012"
     error_message = "bucket_id must forward the underlying bucket name."
+  }
+
+  assert {
+    condition = (
+      length(output.env_variables) == 1
+      && output.env_variables[0].name == "S3_BUCKET"
+      && output.env_variables[0].value == "event-analytics-test-123456789012"
+    )
+    error_message = "env_variables must expose the bucket name as S3_BUCKET."
   }
 
   assert {

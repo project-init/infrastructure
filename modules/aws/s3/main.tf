@@ -6,8 +6,8 @@ module "bucket" {
   context     = var.context
   tags        = var.tags
 
-  force_destroy            = false
-  versioning_enabled       = true
+  force_destroy            = var.force_destroy
+  versioning_enabled       = var.versioning_enabled
   sse_algorithm            = "AES256"
   blocked_encryption_types = ["NONE"]
   allow_ssl_requests_only  = true
