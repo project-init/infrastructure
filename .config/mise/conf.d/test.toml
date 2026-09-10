@@ -1,0 +1,10 @@
+##@ Testing
+
+[tasks."test:module"]
+description = "Initialize and test an OpenTofu module"
+usage = 'arg "<module>" help="Module directory relative to the repository root"'
+run = '''
+set -eu
+tofu -chdir="${usage_module?}" init -backend=false -input=false
+tofu -chdir="${usage_module?}" test
+'''

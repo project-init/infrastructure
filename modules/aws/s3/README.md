@@ -109,10 +109,14 @@ for this module's development and tests; consuming roots use their own lockfiles
 Run from the repository root using the mise-pinned OpenTofu 1.11.4:
 
 ```sh
-mise exec -- tofu -chdir=modules/aws/s3 init -backend=false
+mise run test:module modules/aws/s3
+```
+
+For separate formatting and validation checks:
+
+```sh
 mise exec -- tofu -chdir=modules/aws/s3 fmt -check -recursive
 mise exec -- tofu -chdir=modules/aws/s3 validate
-mise exec -- tofu -chdir=modules/aws/s3 test
 ```
 
 Tests use mock AWS and Time providers and make no AWS API calls.
