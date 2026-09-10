@@ -8,14 +8,15 @@ module "bucket" {
 
   force_destroy            = var.force_destroy
   versioning_enabled       = var.versioning_enabled
-  sse_algorithm            = "AES256"
-  blocked_encryption_types = ["NONE"]
-  allow_ssl_requests_only  = true
-  s3_object_ownership      = "BucketOwnerEnforced"
-  block_public_acls        = true
-  block_public_policy      = true
-  ignore_public_acls       = true
-  restrict_public_buckets  = true
+  sse_algorithm            = var.sse_algorithm
+  kms_master_key_arn       = var.kms_master_key_arn
+  blocked_encryption_types = var.blocked_encryption_types
+  allow_ssl_requests_only  = var.allow_ssl_requests_only
+  s3_object_ownership      = var.s3_object_ownership
+  block_public_acls        = var.block_public_acls
+  block_public_policy      = var.block_public_policy
+  ignore_public_acls       = var.ignore_public_acls
+  restrict_public_buckets  = var.restrict_public_buckets
   user_enabled             = false
 
   lifecycle_configuration_rules = [

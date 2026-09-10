@@ -71,9 +71,38 @@ run "configurable_bucket_behavior" {
   command = plan
 
   variables {
-    force_destroy      = true
-    versioning_enabled = false
+    force_destroy            = true
+    versioning_enabled       = false
+    sse_algorithm            = "aws:kms"
+    kms_master_key_arn       = "arn:aws:kms:us-east-1:123456789012:key/example"
+    blocked_encryption_types = ["NONE"]
+    allow_ssl_requests_only  = false
+    s3_object_ownership      = "BucketOwnerPreferred"
+    block_public_acls        = false
+    block_public_policy      = false
+    ignore_public_acls       = false
+    restrict_public_buckets  = false
   }
+}
+
+run "reject_invalid_encryption_algorithm" {
+  command = plan
+
+  variables {
+    sse_algorithm = "invalid"
+  }
+
+  expect_failures = [var.sse_algorithm]
+}
+
+run "reject_invalid_object_ownership" {
+  command = plan
+
+  variables {
+    s3_object_ownership = "invalid"
+  }
+
+  expect_failures = [var.s3_object_ownership]
 }
 
 run "reject_short_name" {

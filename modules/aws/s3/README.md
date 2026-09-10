@@ -9,10 +9,10 @@ Glue, and EventBridge remain caller responsibilities.
 ## Behavior
 
 - Versioning enabled by default and configurable with `versioning_enabled`.
-- Default encryption uses `AES256`, with `blocked_encryption_types = ["NONE"]`.
-- Bucket policy requires HTTPS.
-- Bucket ownership is `BucketOwnerEnforced`; object ACLs are disabled.
-- All four public-access-block settings enabled.
+- Default encryption uses `AES256`, with `blocked_encryption_types = ["NONE"]`; callers may select `aws:kms` and supply a KMS key ARN.
+- Bucket policy requires HTTPS by default.
+- Bucket ownership defaults to `BucketOwnerEnforced`; object ACLs are disabled by default.
+- All four public-access-block settings are enabled by default.
 - `force_destroy = false` by default; callers may explicitly enable destructive deletion.
 - No IAM user created.
 - Context and explicit tags retain Cloud Posse's merging behavior.
@@ -75,6 +75,15 @@ expiration, and 7 days each for noncurrent expiration and multipart cleanup.
 | `tags` | `map(string)` | `{}` | Additional tags merged by Cloud Posse. |
 | `force_destroy` | `bool` | `false` | Whether Terraform may delete a bucket that still contains objects. |
 | `versioning_enabled` | `bool` | `true` | Whether S3 object versioning is enabled. |
+| `sse_algorithm` | `string` | `"AES256"` | Server-side encryption algorithm: `AES256` or `aws:kms`. |
+| `kms_master_key_arn` | `string` | `""` | KMS key ARN used with `aws:kms`; empty uses the AWS-managed S3 key. |
+| `blocked_encryption_types` | `list(string)` | `["NONE"]` | Encryption types blocked by the bucket encryption configuration. |
+| `allow_ssl_requests_only` | `bool` | `true` | Deny requests that do not use HTTPS. |
+| `s3_object_ownership` | `string` | `"BucketOwnerEnforced"` | S3 object ownership mode. |
+| `block_public_acls` | `bool` | `true` | Block new public ACLs. |
+| `block_public_policy` | `bool` | `true` | Block new public bucket policies. |
+| `ignore_public_acls` | `bool` | `true` | Ignore public ACLs. |
+| `restrict_public_buckets` | `bool` | `true` | Restrict public bucket policies. |
 | `lifecycle_rules` | `list(object)` | `[]` | Enabled prefix-based lifecycle rules. |
 
 Each lifecycle rule requires:

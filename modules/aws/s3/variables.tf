@@ -36,6 +36,79 @@ variable "versioning_enabled" {
   nullable    = false
 }
 
+variable "sse_algorithm" {
+  description = "Server-side encryption algorithm used by the bucket."
+  type        = string
+  default     = "AES256"
+  nullable    = false
+
+  validation {
+    condition     = contains(["AES256", "aws:kms"], var.sse_algorithm)
+    error_message = "sse_algorithm must be AES256 or aws:kms."
+  }
+}
+
+variable "kms_master_key_arn" {
+  description = "KMS key ARN used when sse_algorithm is aws:kms. An empty value uses the AWS-managed S3 key."
+  type        = string
+  default     = ""
+  nullable    = false
+}
+
+variable "blocked_encryption_types" {
+  description = "Encryption types blocked by the bucket encryption configuration."
+  type        = list(string)
+  default     = ["NONE"]
+  nullable    = false
+}
+
+variable "allow_ssl_requests_only" {
+  description = "Whether the bucket policy denies requests that do not use HTTPS."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "s3_object_ownership" {
+  description = "S3 object ownership mode for the bucket."
+  type        = string
+  default     = "BucketOwnerEnforced"
+  nullable    = false
+
+  validation {
+    condition     = contains(["ObjectWriter", "BucketOwnerPreferred", "BucketOwnerEnforced"], var.s3_object_ownership)
+    error_message = "s3_object_ownership must be ObjectWriter, BucketOwnerPreferred, or BucketOwnerEnforced."
+  }
+}
+
+variable "block_public_acls" {
+  description = "Whether S3 blocks new public ACLs on the bucket."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "block_public_policy" {
+  description = "Whether S3 blocks new public bucket policies."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "ignore_public_acls" {
+  description = "Whether S3 ignores public ACLs on the bucket."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
+variable "restrict_public_buckets" {
+  description = "Whether S3 restricts public bucket policies."
+  type        = bool
+  default     = true
+  nullable    = false
+}
+
 variable "lifecycle_rules" {
   description = "Enabled prefix-based lifecycle rules. Retention choices belong to the caller."
   type = list(object({
