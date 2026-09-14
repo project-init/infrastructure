@@ -9,6 +9,15 @@
       "release-type": "terraform-module",
       "separatePullRequests": false
     },
+    "modules/aws/s3": {
+      "component": "aws-s3",
+      "draft": false,
+      "includeComponentInTag": true,
+      "prerelease": false,
+      "pullRequestHeader": "Terraform Module Release: aws-s3",
+      "release-type": "terraform-module",
+      "separatePullRequests": false
+    },
     "modules/github/repository": {
       "component": "github-repository",
       "draft": false,
