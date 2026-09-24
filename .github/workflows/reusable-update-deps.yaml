@@ -10,6 +10,10 @@ on:
         description: 'Command to execute to update dependencies'
         required: true
         type: string
+    secrets:
+      GH_READ_ONLY_TOKEN:
+        description: 'Token that can read private github.com/project-init Go modules'
+        required: false
 
 jobs:
   update-dependencies:
@@ -22,7 +26,18 @@ jobs:
         uses: jdx/mise-action@v2
         
       - name: Run update routine
-        run: ${{ inputs.run-command }}
+        env:
+          GOPRIVATE: github.com/project-init
+          GH_ACCESS_TOKEN: ${{ secrets.GH_READ_ONLY_TOKEN }}
+        run: |
+          # Scope the token to this step; a global insteadOf would also hijack the pull request push.
+          if [ -n "$GH_ACCESS_TOKEN" ]; then
+            export GIT_CONFIG_COUNT=1
+            export GIT_CONFIG_KEY_0="url.https://${GH_ACCESS_TOKEN}:x-oauth-basic@github.com/.insteadOf"
+            export GIT_CONFIG_VALUE_0="https://github.com/"
+          fi
+
+          ${{ inputs.run-command }}
         
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
