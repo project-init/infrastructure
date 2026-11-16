@@ -1,0 +1,8 @@
+dependencies:
+  # Ecosystems `devex sre dependencies upgrade --all` runs.
+  upgrade: [mise]
+  # Tools not listed move to their newest release, majors included.
+  mise:
+    policies:
+      # A major can change state handling.
+      opentofu: minor

@@ -4,9 +4,9 @@ There are 17 separate public repositories housing individual Terraform modules. 
 
 ## Who is Impacted?
 
-* Organizations - Maintaining these modules is an internal infrastructure concern. It affects project-init infrastructure code maintainers.
-* Teams - Infrastructure/platform team primarily. Any team that uses or contributes to terraform modules.
-* People - Engineers who maintain the terraform modules, engineers who consume them in their projects, and anyone doing releases.
+- Organizations - Maintaining these modules is an internal infrastructure concern. It affects project-init infrastructure code maintainers.
+- Teams - Infrastructure/platform team primarily. Any team that uses or contributes to terraform modules.
+- People - Engineers who maintain the terraform modules, engineers who consume them in their projects, and anyone doing releases.
 
 ## Useful Context
 
@@ -42,7 +42,6 @@ The toolchain is OpenTofu (not HashiCorp Terraform), though some older lock file
 
 Consolidate the 17 separate terraform module repos into the existing `project-init/infrastructure` mono repo, establish an automated release pipeline using `git subtree split` to sync changes back to the individual repos for registry compatibility, and validate the approach end-to-end with a single module before scaling to all.
 
-
 ### Details
 
 1. Define the directory structure for housing both the existing 14 mono repo modules and the 17 incoming registry modules under `modules/`, organized by provider (e.g., `modules/aws/<name>`, `modules/github/<name>`). Ensure coexistence with non-terraform assets already in the repo (apps/, packages/, proto/, gen/) and future CLI tooling.
@@ -64,25 +63,25 @@ Consolidate the 17 separate terraform module repos into the existing `project-in
 
 ## Knowns
 
-* There are 17 separate public terraform module repos under the project-init GitHub org.
-* The infrastructure mono repo already exists with 14 modules, Terramate, and release-please configured (all at v0.0.0, never released).
-* The Terraform/OpenTofu public registry requires one module per repo with the naming convention `terraform-<PROVIDER>-<NAME>` and semver git tags for releases.
-* The individual `terraform-aws-*` repos must continue to exist for registry compatibility -- the mono repo cannot replace them as the registry source.
-* The existing modules in the mono repo and the registry-published modules have no overlap.
-* The toolchain is OpenTofu.
-* Consuming repos use registry short-form source addresses (e.g., `source = "project-init/secret/aws"`).
+- There are 17 separate public terraform module repos under the project-init GitHub org.
+- The infrastructure mono repo already exists with 14 modules, Terramate, and release-please configured (all at v0.0.0, never released).
+- The Terraform/OpenTofu public registry requires one module per repo with the naming convention `terraform-<PROVIDER>-<NAME>` and semver git tags for releases.
+- The individual `terraform-aws-*` repos must continue to exist for registry compatibility -- the mono repo cannot replace them as the registry source.
+- The existing modules in the mono repo and the registry-published modules have no overlap.
+- The toolchain is OpenTofu.
+- Consuming repos use registry short-form source addresses (e.g., `source = "project-init/secret/aws"`).
 
 ## Assumptions
 
-* All currently public registry modules should be brought into the mono repo.
-* release-please can handle per-module versioning across 30+ modules in a single repo without issues (it is already configured for 14).
-* The sync-to-individual-repo approach (mono repo -> individual repo on release) is the right pattern vs. alternatives like switching consumers to git source with subdirectory syntax.
-* All 17 module repos follow a consistent enough structure to be imported without significant refactoring.
-* The existing `modules/aws/<name>` directory convention in the mono repo will work for the incoming modules.
+- All currently public registry modules should be brought into the mono repo.
+- release-please can handle per-module versioning across 30+ modules in a single repo without issues (it is already configured for 14).
+- The sync-to-individual-repo approach (mono repo -> individual repo on release) is the right pattern vs. alternatives like switching consumers to git source with subdirectory syntax.
+- All 17 module repos follow a consistent enough structure to be imported without significant refactoring.
+- The existing `modules/aws/<name>` directory convention in the mono repo will work for the incoming modules.
 
 ## Unknowns
 
-* Whether any of the 17 module repos are legacy/unused and can be excluded.
-* How per-module version tracking works when a shared dependency (e.g., AWS provider) is updated -- does every module get a version bump, or only affected ones?
-* What the release-please tag format should be to avoid collisions across 30+ modules in one repo (e.g., `aws-rds-v1.0.0` vs `v1.0.0`).
-* Whether there are private terraform modules that should also be made public and included.
+- Whether any of the 17 module repos are legacy/unused and can be excluded.
+- How per-module version tracking works when a shared dependency (e.g., AWS provider) is updated -- does every module get a version bump, or only affected ones?
+- What the release-please tag format should be to avoid collisions across 30+ modules in one repo (e.g., `aws-rds-v1.0.0` vs `v1.0.0`).
+- Whether there are private terraform modules that should also be made public and included.

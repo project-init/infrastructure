@@ -1,0 +1,12 @@
+##@ Generate Docs
+
+[tasks.docs]
+description = "Generate README documentation for all infrastructure modules"
+run = """
+set -eu
+
+for module in modules/*/*/; do
+    [ -d "$module" ] || continue
+    terraform-docs --config .terraform-docs.yml "$module"
+done
+"""

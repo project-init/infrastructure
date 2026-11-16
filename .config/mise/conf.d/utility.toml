@@ -1,0 +1,7 @@
+##@ Utility
+
+[tasks.release]
+run = "devex sre release"
+
+[tasks."update:dependencies"]
+run = "devex sre dependencies upgrade --all"

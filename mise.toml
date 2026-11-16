@@ -1,19 +1,13 @@
 [tools]
-opentofu = "1.11.4"
-awscli = "latest"
+opentofu = "1.13.9"
+awscli = "2.40.3"
 terraform-docs = "latest"
-"github:project-init/devex" = "0.15.0"
+
+# SRE and Docs
+"github:project-init/devex" = "v0.23.0"
+
+# Markdown
+oxfmt = "0.78.0"
 
 [settings]
 experimental = true
-
-[tasks.docs]
-description = "Generate README documentation for all infrastructure modules"
-run = """
-set -eu
-
-for module in modules/*/*/; do
-    [ -d "$module" ] || continue
-    terraform-docs --config .terraform-docs.yml "$module"
-done
-"""

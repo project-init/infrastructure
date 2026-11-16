@@ -3,16 +3,16 @@ on:
   workflow_call:
     inputs:
       reviewers:
-        description: 'Comma separated list of GitHub handles to request review from'
+        description: "Comma separated list of GitHub handles to request review from"
         required: false
         type: string
       run-command:
-        description: 'Command to execute to update dependencies'
+        description: "Command to execute to update dependencies"
         required: true
         type: string
     secrets:
       GH_READ_ONLY_TOKEN:
-        description: 'Token that can read private github.com/project-init Go modules'
+        description: "Token that can read private github.com/project-init Go modules"
         required: false
 
 jobs:
@@ -21,10 +21,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup environment
         uses: jdx/mise-action@v2
-        
+
       - name: Run update routine
         env:
           GOPRIVATE: github.com/project-init
@@ -38,7 +38,7 @@ jobs:
           fi
 
           ${{ inputs.run-command }}
-        
+
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:

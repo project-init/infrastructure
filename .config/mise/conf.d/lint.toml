@@ -5,6 +5,9 @@ description = "Format all code"
 alias = ["fmt"]
 depends = ["format:*"]
 
+[tasks."format:misc"]
+run = "oxfmt ."
+
 [tasks."format:tofu"]
 description = "Format OpenTofu code recursively"
 alias = ["fmt:tofu"]
