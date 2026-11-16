@@ -6,7 +6,7 @@ on:
 
 jobs:
   update:
-    uses: ./.github/workflows/reusable-update-deps.yaml@main
+    uses: ./.github/workflows/reusable-update-deps.yaml
     with:
       reviewers: "project-init/admin"
       run-command: "devex sre dependencies upgrade --all"
