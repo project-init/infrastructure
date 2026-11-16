@@ -160,6 +160,7 @@ variable "lifecycle_rules" {
     error_message = "Lifecycle expiration and multipart-abort days must be positive integers."
   }
 
+  validation {
     condition = alltrue(flatten([
       for rule in var.lifecycle_rules : [
         for t in rule.transitions : try(
