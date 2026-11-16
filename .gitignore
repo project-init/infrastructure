@@ -20,3 +20,4 @@ bun.lock
 .DS_Store
 
 /build
+mise.local.toml
