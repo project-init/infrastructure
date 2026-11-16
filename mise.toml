@@ -4,7 +4,7 @@ awscli = "2.40.3"
 terraform-docs = "latest"
 
 # SRE and Docs
-"github:project-init/devex" = "v0.23.0"
+"github:project-init/devex" = "v0.24.0"
 
 # Markdown
 oxfmt = "0.78.0"
