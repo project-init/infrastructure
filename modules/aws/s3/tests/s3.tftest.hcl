@@ -67,6 +67,64 @@ run "valid_configuration" {
   }
 }
 
+run "valid_transitions" {
+  command = plan
+
+  variables {
+    lifecycle_rules = [{
+      id                                     = "glacier-ir-then-expire"
+      prefix                                 = ""
+      expiration_days                        = 90
+      noncurrent_expiration_days             = 7
+      abort_incomplete_multipart_upload_days = 7
+      transitions = [{
+        days          = 30
+        storage_class = "GLACIER_IR"
+      }]
+    }]
+  }
+}
+
+run "reject_transition_after_expiration" {
+  command = plan
+
+  variables {
+    lifecycle_rules = [{
+      id                                     = "late-transition"
+      prefix                                 = ""
+      expiration_days                        = 30
+      noncurrent_expiration_days             = 7
+      abort_incomplete_multipart_upload_days = 7
+      transitions = [{
+        days          = 30
+        storage_class = "GLACIER_IR"
+      }]
+    }]
+  }
+
+  expect_failures = [var.lifecycle_rules]
+}
+
+run "reject_invalid_transition_storage_class" {
+  command = plan
+
+  variables {
+    lifecycle_rules = [{
+      id                                     = "bad-class"
+      prefix                                 = ""
+      expiration_days                        = 90
+      noncurrent_expiration_days             = 7
+      abort_incomplete_multipart_upload_days = 7
+      transitions = [{
+        days          = 30
+        storage_class = "STANDARD"
+      }]
+    }]
+  }
+
+  expect_failures = [var.lifecycle_rules]
+}
+
 run "configurable_bucket_behavior" {
   command = plan
 
