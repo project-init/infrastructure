@@ -19,9 +19,9 @@ Glue, and EventBridge remain caller responsibilities.
   The wrapper adds no tags.
 
 Lifecycle rules are enabled and match the supplied prefixes. Current-version
-expiration, noncurrent-version expiration, and incomplete multipart-upload
-cleanup are configured independently. An empty rules list creates no
-lifecycle configuration.
+storage-class transitions, current-version expiration, noncurrent-version
+expiration, and incomplete multipart-upload cleanup are configured
+independently. An empty rules list creates no lifecycle configuration.
 
 ## Usage
 
@@ -78,6 +78,17 @@ Each lifecycle rule requires:
 | `noncurrent_expiration_days` | `number` | Positive integer days before noncurrent-version expiration. |
 | `abort_incomplete_multipart_upload_days` | `number` | Positive integer days before unfinished multipart uploads are aborted. |
 
+Each lifecycle rule optionally accepts:
+
+| Field | Type | Default | Description |
+| --- | --- | --- | --- |
+| `transitions` | `list(object({ days = number, storage_class = string }))` | `[]` | Current-version storage-class transitions. `days` is a positive integer less than `expiration_days`; `storage_class` is one of `STANDARD_IA`, `ONEZONE_IA`, `INTELLIGENT_TIERING`, `GLACIER_IR`, `GLACIER`, or `DEEP_ARCHIVE`. |
+
+S3 skips transitioning objects smaller than 128 KB by default. Glacier
+classes also bill a minimum storage duration (90 days for `GLACIER_IR` and
+`GLACIER`, 180 for `DEEP_ARCHIVE`), so expiring earlier is charged as if
+stored for the full minimum.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -112,7 +123,7 @@ No resources.
 | <a name="input_force_destroy"></a> [force\_destroy](#input\_force\_destroy) | Whether Terraform may delete the bucket when it still contains objects. | `bool` | `false` | no |
 | <a name="input_ignore_public_acls"></a> [ignore\_public\_acls](#input\_ignore\_public\_acls) | Whether S3 ignores public ACLs on the bucket. | `bool` | `true` | no |
 | <a name="input_kms_master_key_arn"></a> [kms\_master\_key\_arn](#input\_kms\_master\_key\_arn) | KMS key ARN used when sse\_algorithm is aws:kms. An empty value uses the AWS-managed S3 key. | `string` | `""` | no |
-| <a name="input_lifecycle_rules"></a> [lifecycle\_rules](#input\_lifecycle\_rules) | Enabled prefix-based lifecycle rules. Retention choices belong to the caller. | <pre>list(object({<br/>    id                                     = string<br/>    prefix                                 = string<br/>    expiration_days                        = number<br/>    noncurrent_expiration_days             = number<br/>    abort_incomplete_multipart_upload_days = number<br/>  }))</pre> | `[]` | no |
+| <a name="input_lifecycle_rules"></a> [lifecycle\_rules](#input\_lifecycle\_rules) | Enabled prefix-based lifecycle rules. Retention choices belong to the caller. | <pre>list(object({<br/>    id                                     = string<br/>    prefix                                 = string<br/>    expiration_days                        = number<br/>    noncurrent_expiration_days             = number<br/>    abort_incomplete_multipart_upload_days = number<br/>    transitions = optional(list(object({<br/>      days          = number<br/>      storage_class = string<br/>    })), [])<br/>  }))</pre> | `[]` | no |
 | <a name="input_name"></a> [name](#input\_name) | Complete bucket name supplied by the caller. | `string` | n/a | yes |
 | <a name="input_restrict_public_buckets"></a> [restrict\_public\_buckets](#input\_restrict\_public\_buckets) | Whether S3 restricts public bucket policies. | `bool` | `true` | no |
 | <a name="input_s3_object_ownership"></a> [s3\_object\_ownership](#input\_s3\_object\_ownership) | S3 object ownership mode for the bucket. | `string` | `"BucketOwnerEnforced"` | no |

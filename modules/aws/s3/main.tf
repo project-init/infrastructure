@@ -28,6 +28,13 @@ module "bucket" {
         prefix = rule.prefix
       }
 
+      transition = [
+        for t in rule.transitions : {
+          days          = t.days
+          storage_class = t.storage_class
+        }
+      ]
+
       expiration = {
         days = rule.expiration_days
       }

@@ -117,6 +117,10 @@ variable "lifecycle_rules" {
     expiration_days                        = number
     noncurrent_expiration_days             = number
     abort_incomplete_multipart_upload_days = number
+    transitions = optional(list(object({
+      days          = number
+      storage_class = string
+    })), [])
   }))
   default  = []
   nullable = false
@@ -154,5 +158,29 @@ variable "lifecycle_rules" {
       ]
     ]))
     error_message = "Lifecycle expiration and multipart-abort days must be positive integers."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for rule in var.lifecycle_rules : [
+        for t in rule.transitions : try(
+          t.days > 0 && floor(t.days) == t.days && t.days < rule.expiration_days,
+          false,
+        )
+      ]
+    ]))
+    error_message = "Lifecycle transition days must be positive integers less than the rule's expiration_days."
+  }
+
+  validation {
+    condition = alltrue(flatten([
+      for rule in var.lifecycle_rules : [
+        for t in rule.transitions : contains(
+          ["STANDARD_IA", "ONEZONE_IA", "INTELLIGENT_TIERING", "GLACIER_IR", "GLACIER", "DEEP_ARCHIVE"],
+          t.storage_class,
+        )
+      ]
+    ]))
+    error_message = "Lifecycle transition storage_class must be STANDARD_IA, ONEZONE_IA, INTELLIGENT_TIERING, GLACIER_IR, GLACIER, or DEEP_ARCHIVE."
   }
 }
