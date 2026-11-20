@@ -2,35 +2,32 @@
 
 Small wrapper around `cloudposse/s3-bucket/aws` version `4.12.0`.
 
-The caller supplies the complete bucket name, Cloud Posse label context,
-tags, and lifecycle rules. Naming conventions, workload IAM, Firehose,
-Glue, and EventBridge remain caller responsibilities.
+The caller supplies the complete bucket name, Cloud Posse label context, tags, and lifecycle rules. Naming conventions,
+workload IAM, Firehose, Glue, and EventBridge remain caller responsibilities.
 
 ## Behavior
 
 - Versioning enabled by default and configurable with `versioning_enabled`.
-- Default encryption uses `AES256`, with `blocked_encryption_types = ["NONE"]`; callers may select `aws:kms` and supply a KMS key ARN.
+- Default encryption uses `AES256`, with `blocked_encryption_types = ["NONE"]`; callers may select `aws:kms` and supply
+  a KMS key ARN.
 - Bucket policy requires HTTPS by default.
 - Bucket ownership defaults to `BucketOwnerEnforced`; object ACLs are disabled by default.
 - All four public-access-block settings are enabled by default.
 - `force_destroy = false` by default; callers may explicitly enable destructive deletion.
 - No IAM user created.
-- Context and explicit tags retain Cloud Posse's merging behavior.
-  The wrapper adds no tags.
+- Context and explicit tags retain Cloud Posse's merging behavior. The wrapper adds no tags.
 
-Lifecycle rules are enabled and match the supplied prefixes. Current-version
-storage-class transitions, current-version expiration, noncurrent-version
-expiration, and incomplete multipart-upload cleanup are configured
-independently. An empty rules list creates no lifecycle configuration.
+Lifecycle rules are enabled and match the supplied prefixes. Current-version storage-class transitions, current-version
+expiration, noncurrent-version expiration, and incomplete multipart-upload cleanup are configured independently. An
+empty rules list creates no lifecycle configuration.
 
 ## Usage
 
-Consume this module through a Git subdirectory source pinned to a verified
-release commit. Replace `VERIFIED_RELEASE_COMMIT_SHA` below with the full
-commit SHA resolved from the actual release tag before use.
+Consume this module through a Git subdirectory source pinned to a verified release commit. Replace
+`VERIFIED_RELEASE_COMMIT_SHA` below with the full commit SHA resolved from the actual release tag before use.
 
-This example assumes the caller already defines its label module, environment,
-account identity, and retention configuration.
+This example assumes the caller already defines its label module, environment, account identity, and retention
+configuration.
 
 ```hcl
 module "event_analytics_bucket" {
@@ -62,9 +59,8 @@ module "event_analytics_bucket" {
 }
 ```
 
-Data Platform should retain its existing prefix locals when migrating.
-Its staging values are 14 days for raw expiration, 30 days for failed
-expiration, and 7 days each for noncurrent expiration and multipart cleanup.
+Data Platform should retain its existing prefix locals when migrating. Its staging values are 14 days for raw
+expiration, 30 days for failed expiration, and 7 days each for noncurrent expiration and multipart cleanup.
 
 ## Lifecycle rule fields
 
@@ -84,10 +80,9 @@ Each lifecycle rule optionally accepts:
 | ------------- | --------------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `transitions` | `list(object({ days = number, storage_class = string }))` | `[]`    | Current-version storage-class transitions. `days` is a positive integer less than `expiration_days`; `storage_class` is one of `STANDARD_IA`, `ONEZONE_IA`, `INTELLIGENT_TIERING`, `GLACIER_IR`, `GLACIER`, or `DEEP_ARCHIVE`. |
 
-S3 skips transitioning objects smaller than 128 KB by default. Glacier
-classes also bill a minimum storage duration (90 days for `GLACIER_IR` and
-`GLACIER`, 180 for `DEEP_ARCHIVE`), so expiring earlier is charged as if
-stored for the full minimum.
+S3 skips transitioning objects smaller than 128 KB by default. Glacier classes also bill a minimum storage duration (90
+days for `GLACIER_IR` and `GLACIER`, 180 for `DEEP_ARCHIVE`), so expiring earlier is charged as if stored for the full
+minimum.
 
 <!-- BEGIN_TF_DOCS -->
 
@@ -142,9 +137,8 @@ No resources.
 
 <!-- END_TF_DOCS -->
 
-The caller supplies the AWS provider configuration. Cloud Posse also requires
-the Time provider. The tracked lockfile records resolved provider versions
-for this module's development and tests; consuming roots use their own lockfiles.
+The caller supplies the AWS provider configuration. Cloud Posse also requires the Time provider. The tracked lockfile
+records resolved provider versions for this module's development and tests; consuming roots use their own lockfiles.
 
 ## Validation and tests
 
@@ -161,29 +155,26 @@ mise exec -- tofu -chdir=modules/aws/s3 fmt -check -recursive
 mise exec -- tofu -chdir=modules/aws/s3 validate
 ```
 
-Tests use mock AWS and Time providers and make no AWS API calls.
-They cover a valid lifecycle configuration, selected invalid inputs,
-and output forwarding.
+Tests use mock AWS and Time providers and make no AWS API calls. They cover a valid lifecycle configuration, selected
+invalid inputs, and output forwarding.
 
-Use `test -verbose` to inspect planned resource settings and tag merging.
-The IAM policy document data source is mocked, so these tests do not verify
-the generated HTTPS policy JSON. They also do not verify live state or prove
-that an existing bucket migration is free of changes.
+Use `test -verbose` to inspect planned resource settings and tag merging. The IAM policy document data source is mocked,
+so these tests do not verify the generated HTTPS policy JSON. They also do not verify live state or prove that an
+existing bucket migration is free of changes.
 
 ## Migrating Data Platform
 
-The wrapper's internal Cloud Posse module is named `bucket`. Keep this name
-stable because it forms part of every managed resource address.
+The wrapper's internal Cloud Posse module is named `bucket`. Keep this name stable because it forms part of every
+managed resource address.
 
-Data Platform currently calls Cloud Posse 4.12.0 directly through
-`module.event_analytics_bucket`. Introducing this wrapper adds `module.bucket`
-to the resource addresses even when the outer module name remains unchanged.
+Data Platform currently calls Cloud Posse 4.12.0 directly through `module.event_analytics_bucket`. Introducing this
+wrapper adds `module.bucket` to the resource addresses even when the outer module name remains unchanged.
 
-The following mapping is derived from configuration, not verified live state.
-Before migrating, compare it with the staging state resource inventory.
+The following mapping is derived from configuration, not verified live state. Before migrating, compare it with the
+staging state resource inventory.
 
-Add these moved blocks in Data Platform's `terraform/modules/main` module,
-alongside the `event_analytics_bucket` module call:
+Add these moved blocks in Data Platform's `terraform/modules/main` module, alongside the `event_analytics_bucket` module
+call:
 
 ```hcl
 moved {
@@ -227,28 +218,23 @@ moved {
 }
 ```
 
-These addresses are relative to Data Platform's `main` module. Its enclosing
-module path is retained automatically. Keep the moved blocks so environments
-that migrate later can follow the same address changes.
+These addresses are relative to Data Platform's `main` module. Its enclosing module path is retained automatically. Keep
+the moved blocks so environments that migrate later can follow the same address changes.
 
 In the separate consuming PR:
 
-1. Use the actual S3 release tag to resolve and verify its full commit SHA.
-   Pin the Git subdirectory source to that SHA and remove the registry-only
-   `version` argument from the old module call.
-2. Preserve the existing bucket name expression, label context, tags, prefix
-   locals, and retention values. Rename the caller argument `bucket_name`
-   to `name` and translate lifecycle inputs to this wrapper's interface.
-   Remove settings now fixed inside the wrapper.
-3. Add the moved blocks after checking the staging resource inventory.
-   Leave workload IAM, Firehose, Glue, and EventBridge configuration in place.
-4. Initialize using the consuming root's provider lockfile. Confirm its AWS
-   provider satisfies `>= 6.22.0, < 7.0.0`; review any required provider upgrade
-   separately from the extraction.
-5. Review the staging plan. All eight existing resources should map to their
-   new addresses without recreation or unintended configuration changes.
-   Confirm bucket outputs, tags, encryption, HTTPS policy, public-access
-   controls, ownership, versioning, and lifecycle settings are preserved.
+1. Use the actual S3 release tag to resolve and verify its full commit SHA. Pin the Git subdirectory source to that SHA
+   and remove the registry-only `version` argument from the old module call.
+2. Preserve the existing bucket name expression, label context, tags, prefix locals, and retention values. Rename the
+   caller argument `bucket_name` to `name` and translate lifecycle inputs to this wrapper's interface. Remove settings
+   now fixed inside the wrapper.
+3. Add the moved blocks after checking the staging resource inventory. Leave workload IAM, Firehose, Glue, and
+   EventBridge configuration in place.
+4. Initialize using the consuming root's provider lockfile. Confirm its AWS provider satisfies `>= 6.22.0, < 7.0.0`;
+   review any required provider upgrade separately from the extraction.
+5. Review the staging plan. All eight existing resources should map to their new addresses without recreation or
+   unintended configuration changes. Confirm bucket outputs, tags, encryption, HTTPS policy, public-access controls,
+   ownership, versioning, and lifecycle settings are preserved.
 
-The mock module tests do not establish migration safety. The consuming
-staging plan is the required verification before applying the migration.
+The mock module tests do not establish migration safety. The consuming staging plan is the required verification before
+applying the migration.

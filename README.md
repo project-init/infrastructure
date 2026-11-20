@@ -9,8 +9,8 @@ individual updates where necessary.
 
 ## Module documentation
 
-Modules live under `modules/<provider>/<module>/`. Place usage examples in
-each module's `examples/` directory and link to them from its README.
+Modules live under `modules/<provider>/<module>/`. Place usage examples in each module's `examples/` directory and link
+to them from its README.
 
 Keep handwritten explanations outside these markers:
 
@@ -19,8 +19,8 @@ Keep handwritten explanations outside these markers:
 <!-- END_TF_DOCS -->
 ```
 
-The content between the markers is generated from the module's Terraform
-definitions. Update variable and output descriptions in the `.tf` files.
+The content between the markers is generated from the module's Terraform definitions. Update variable and output
+descriptions in the `.tf` files.
 
 After changing a module, run from the repository root:
 
@@ -29,10 +29,8 @@ mise format
 mise docs
 ```
 
-`mise docs` updates every module README using the shared `.terraform-docs.yml`
-configuration. Modules added under the same directory layout are included
-automatically.
+`mise docs` updates every module README using the shared `.terraform-docs.yml` configuration. Modules added under the
+same directory layout are included automatically.
 
-Commit the generated documentation alongside your changes. Pull request CI
-runs formatting and documentation generation and fails if either produces
-uncommitted changes.
+Commit the generated documentation alongside your changes. Pull request CI runs formatting and documentation generation
+and fails if either produces uncommitted changes.
