@@ -1,10 +1,10 @@
 [tools]
 opentofu = "1.13.9"
-awscli = "2.40.3"
+awscli = "2.42.1"
 terraform-docs = "latest"
 
 # SRE and Docs
-"github:project-init/devex" = "v0.24.0"
+"github:project-init/devex" = "v0.25.1"
 
 # Markdown
 oxfmt = "0.79.0"
