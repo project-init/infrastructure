@@ -1,7 +1,9 @@
 ##@ Generate Docs
 
 [tasks.docs]
-description = "Generate README documentation for all infrastructure modules"
+description = "Generate README documentation for all infrastructure modules, then format the repository"
+# terraform-docs writes unaligned tables; format them so the PR check sees no drift.
+depends_post = ["format:misc"]
 run = """
 set -eu
 
