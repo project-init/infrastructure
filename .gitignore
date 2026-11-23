@@ -21,3 +21,7 @@ bun.lock
 
 /build
 mise.local.toml
+
+# LLMs
+CLAUDE.local.md
+.claude/

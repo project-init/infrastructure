@@ -1,0 +1,399 @@
+schema_version: v1
+
+discovery:
+  id: 2026-11-21-terraform-module-hub
+  title: "Terraform Module Hub"
+  document: discovery.md
+  synopsis: synopsis.md
+
+items:
+  - id: INIT-001
+    kind: initiative
+    title: "Develop and publish all public Terraform modules from the infrastructure hub"
+    description: >-
+      Move the 17 terraform-aws-* modules into project-init/infrastructure beside s3 and sqs, version each module with
+      an extended devex sre release, and publish every release as a snapshot commit to its terraform-aws-<name>
+      repository through a dedicated GitHub App.
+    acceptance_criteria:
+      - All 19 public modules live under modules/aws/ in project-init/infrastructure.
+      - Every module release publishes to its terraform-aws-<name> repository and appears on the Terraform Registry and
+        the OpenTofu Registry.
+      - Consumers of the 17 existing modules resolve their pinned versions with no source changes.
+      - The hub README documents adding a module, cutting a release, and registering a new module repository on both
+        registries.
+    depends_on: []
+    labels: [triaged]
+
+  - id: WI-001
+    kind: task
+    parent: INIT-001
+    title: "Create the project-init-module-publisher GitHub App"
+    description: >-
+      Have an org admin create an organization GitHub App with contents write and workflows write permissions, install
+      it on the project-init organization for selected repositories, and record its installation ID. Store its app ID
+      and private key in a publish environment on project-init/infrastructure that accepts deployments from main and
+      from aws/* tags. GitHub offers no API for creating apps, so this step is manual.
+    acceptance_criteria:
+      - The App requests contents write, workflows write, and no permission beyond GitHub's mandatory metadata read.
+      - The App's installation ID is recorded for Terraform.
+      - The publish environment holds the App ID and private key and accepts deployments from main and aws/* tags only.
+      - A workflow run from any other branch or tag cannot read the private key.
+    depends_on: []
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: hours
+
+  - id: WI-002
+    kind: task
+    parent: INIT-001
+    title: "Manage module repository rulesets, the hub tag ruleset, and the publisher installation in Terraform"
+    description: >-
+      In infrastructure-platform/terraform/accounts/github, add a csv/repos.csv column marking repositories published
+      from the hub. Install the publisher App on marked rows with github_app_installation_repositories. For marked rows,
+      disable issues, point the description at the hub, and manage github_repository_ruleset resources that restrict
+      pushes to the App, block force-push and deletion, make v* tags immutable, and keep org admin bypass. Add a tag
+      ruleset on project-init/infrastructure that lets only @project-init/Admin create aws/* tags and blocks moving or
+      deleting them. Add rows for terraform-aws-s3 and terraform-aws-sqs and mark them. When an existing repository is
+      imported, its row gets an import block that brings its hand-made ruleset under Terraform.
+    acceptance_criteria:
+      - tofu plan for the github account creates terraform-aws-s3 and terraform-aws-sqs with the new rulesets and App
+        installation.
+      - Unmarked module repositories keep their current rulesets, so maintainers can still release them until import.
+      - A push to a marked repository by a non-admin user is rejected.
+      - Terraform manages every ruleset on a marked repository.
+      - A non-admin who pushes an aws/* tag to the hub is rejected.
+    depends_on: [WI-001]
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: days
+
+  - id: WI-003
+    kind: task
+    parent: INIT-001
+    title: "Add shared CI, CODEOWNERS, and Dependabot to the hub root"
+    description: >-
+      Add .github/CODEOWNERS with "* @project-init/Admin" so the existing code-owner rule takes effect. Add
+      .github/dependabot.yml covering the terraform ecosystem across /modules/*/* in one grouped monthly PR, plus
+      github-actions. Add an MIT LICENSE at the hub root, matching the module repositories' MIT-LICENSE. Extend pr.yaml
+      to run tofu init -backend=false and tofu validate on changed modules and tofu test where tests exist, to cover
+      every module when a PR changes the root toolchain or the run is dispatched, to report the combined result from one
+      job with a fixed name, and to accept workflow_dispatch. In the hub's update-deps.yaml, add a job after
+      the reusable workflow that dispatches pr.yaml on the PR branch, because a PR opened with GITHUB_TOKEN starts no
+      workflow run. Leave reusable-update-deps.yaml unchanged; other repositories call it. Delete the
+      .terraform.lock.hcl files in modules/aws/s3 and modules/aws/sqs and add the name to .gitignore; OpenTofu reads a
+      lock file in a root module alone, and no module repository commits one.
+    acceptance_criteria:
+      - A PR touching modules/aws/s3 runs tofu validate and tofu test for s3 only.
+      - A PR with a module that fails validation fails the fixed-name check, and a PR that touches neither a module nor
+        the root toolchain passes it.
+      - A PR that changes the OpenTofu pin in mise.toml, and a dispatched run, validate and test every module.
+      - Dependabot opens one grouped PR covering providers in both modules/aws/s3 and modules/aws/sqs.
+      - The weekly devex dependency PR runs PR CI on its head commit.
+      - The hub tracks no .terraform.lock.hcl, and .gitignore lists the name.
+      - GitHub requests review from @project-init/Admin on every hub PR.
+      - The hub root holds an MIT LICENSE matching the module repositories' MIT-LICENSE.
+    depends_on: []
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: days
+
+  - id: WI-016
+    kind: task
+    parent: INIT-001
+    title: "Move dependency versions from module READMEs to one hub table"
+    description: >-
+      A Dependabot bump changes the versions terraform-docs writes into a module README, so its PR fails the docs drift
+      check. In .terraform-docs.yml, hide the requirements, providers, and modules sections, regenerate every module
+      README, and rewrite the handwritten text in modules/aws/s3/README.md that names dependency versions, the tracked
+      lock file, and the pinned OpenTofu version. Pin terraform-docs in mise.toml, where latest gives devex nothing to
+      bump and lets a new release change every README outside the weekly PR. Add a mise task that writes
+      each module's provider constraints and module versions to one table in modules/README.md, formatted so mise format
+      leaves it unchanged. Keep that task out of mise docs, so PR CI never regenerates the table. In the weekly
+      update-deps.yaml command, run it after the upgrade, followed by mise docs and mise format, so the weekly PR
+      carries every file a tool bump regenerates.
+    acceptance_criteria:
+      - No module README lists a provider or module version.
+      - A PR that only bumps cloudposse/s3-bucket/aws in modules/aws/s3/main.tf passes PR CI, leaving modules/README.md
+        stale.
+      - modules/README.md lists the provider constraints and module versions of s3 and sqs.
+      - The weekly dependency PR carries a regenerated modules/README.md when a version changed.
+      - A weekly dependency PR that bumps oxfmt or terraform-docs passes the format and docs drift check with no
+        hand-pushed commit.
+      - mise.toml pins terraform-docs to a version.
+    depends_on: [WI-003]
+    labels: [triaged]
+    estimate:
+      value: 1
+      unit: days
+
+  - id: WI-015
+    kind: task
+    parent: INIT-001
+    title: "Require the hub's CI check on main through Terraform"
+    description: >-
+      In infrastructure-platform/terraform/accounts/github, bring the hub's hand-made main ruleset under Terraform with
+      an import block, keeping its 2 approvals, last-push approval, and code-owner review. Add a required status check
+      on the fixed-name job from WI-003. Today the ruleset requires no checks, so a PR that fails CI can merge.
+    acceptance_criteria:
+      - tofu plan for the github account imports the hub's main ruleset and changes only its required status checks.
+      - A hub PR whose fixed-name check failed, or never ran, cannot merge.
+      - A Dependabot PR satisfies the required check through its own CI run, and the weekly devex dependency PR through
+        its dispatched run.
+    depends_on: [WI-003, WI-016]
+    labels: [triaged]
+    estimate:
+      value: 4
+      unit: hours
+
+  - id: WI-004
+    kind: feature
+    parent: INIT-001
+    title: "Teach devex sre release to release modules one at a time"
+    description: >-
+      In project-init/devex, extend devex sre release to find modules under modules/<provider>/<name>/ and release them
+      separately. --module=<provider>/<name> lists the commits since that module's <provider>/<name>-v* tag that touch
+      its directory, suggests a bump from their conventional-commit titles, and pushes an annotated tag whose message
+      carries the grouped changes. A bare --module shows a multi-select list of modules with releasable commits and
+      prompts for each picked module's bump. --changed releases every such module without prompting. --bump cannot
+      combine with a bare --module or with --changed, and --module cannot combine with --changed. A module with no tag
+      yet starts from a baseline version in .sre/release.yaml. allowMajorVersionBump still applies. Ship it in a devex
+      release.
+    acceptance_criteria:
+      - --module=aws/s3 counts only commits that touch modules/aws/s3/, reads only aws/s3-v* tags, and tags
+        aws/s3-vX.Y.Z; --bump overrides its suggested bump.
+      - A bare --module lists only modules with releasable commits, then prompts for each selected module's bump with
+        its suggestion as the default.
+      - --changed releases every module with releasable commits unattended, using each module's suggested bump.
+      - --bump with a bare --module or with --changed, and --module with --changed, each fail with an error that names
+        the conflict.
+      - With allowMajorVersionBump off, a breaking change in any mode, --changed included, warns and suggests a minor
+        bump, as repo-wide mode does today.
+      - Multi-module runs push each tag in its own git push and push every tag before waiting on workflows, so one
+        failed publish never stops the rest from being tagged.
+      - Any commit that touches a module's directory counts as releasable; without a conventional-commit title it
+        suggests a patch bump.
+      - A module with no tag starts from its .sre/release.yaml baseline, so a minor release from 0.0.0 is 0.1.0.
+      - A run that would release a module with neither a tag nor a baseline fails before pushing any tag, with an error
+        that names the module; runs that leave that module out, and repo-wide mode, are unaffected.
+      - --changed --yes runs without a terminal and needs no --bump. A bare --module without a terminal, or with
+        --output json, fails and points to --module=<provider>/<name> and --changed.
+      - --module aws/s3, without the =, fails with an error that names --module=aws/s3.
+      - The tag message lists the module's features, fixes, and other changes since its last tag.
+      - Repo-wide mode, --bump included, behaves as today and reads only v[0-9]* tags, so aws/* tags never break it.
+      - A .sre/release.yaml setting turns repo-wide releases off, and a run without --module or --changed then fails
+        with a pointer to them.
+      - A devex release ships the change.
+    depends_on: []
+    labels: [triaged]
+    estimate:
+      value: 4
+      unit: days
+
+  - id: WI-012
+    kind: task
+    parent: INIT-001
+    title: "Pin the hub to the per-module devex release"
+    description: >-
+      Bump the hub's devex pin in mise.toml to the release from WI-004, and record s3 and sqs baselines of 0.0.0 in
+      .sre/release.yaml. Keep .github/workflows/release.yaml until WI-013, and keep the mise release task, which passes
+      its arguments to devex.
+    acceptance_criteria:
+      - devex sre release --module=aws/s3 --bump minor --dry-run proposes 0.1.0.
+      - mise run release --module=aws/s3 --bump minor --dry-run also proposes 0.1.0.
+      - A bare devex sre release --module lists s3 and sqs when both have releasable commits.
+    depends_on: [WI-004]
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: hours
+
+  - id: WI-005
+    kind: feature
+    parent: INIT-001
+    title: "Build the module publish workflow and scripts/publish-module.sh"
+    description: >-
+      Add .github/workflows/publish-module.yaml, which runs on pushed aws/*-v* tags, holds a concurrency group per
+      module, and runs scripts/publish-module.sh in the publish environment, following the six steps under Publishing in
+      discovery.md. Its last step dispatches .github/workflows/verify-module.yaml with the hub tag; that workflow polls
+      both registries outside the publish environment, so the publish run ends before devex stops watching at 30
+      minutes. GitHub cancels a pending run when a third queues in its concurrency group; devex reports a cancelled run
+      as failed, and the republish entry point recovers it. Add a workflow_dispatch entry point that republishes one hub tag, and a --dry-run flag that takes a
+      module and a hub ref, reads the public module repository without an App token, and prints the snapshot diff
+      without pushing. Prove the script criteria with --dry-run and tests, and the environment and concurrency criteria
+      by reviewing the workflow; WI-006 confirms the publish, registry poll, rerun, and GitHub Release on the first real
+      release.
+    acceptance_criteria:
+      - The publish job runs in the publish environment and never force-pushes.
+      - A tag on a commit unreachable from origin/main fails the job before it mints a token.
+      - Two tags pushed together publish in separate runs, so one failure leaves the other publishing.
+      - Two tags for one module never run the publish job at once.
+      - The publish run finishes without polling a registry, and devex sre release reports its result.
+      - A module repository tag on a commit from outside this hub release fails the job.
+      - A rerun for an already published version pushes nothing, then creates any missing GitHub Release and
+        dispatches the verify workflow again.
+      - A push rejected as non-fast-forward fails the job and names the module repository.
+      - The verify workflow fails when the Terraform Registry omits the version 10 minutes after the push, or the
+        OpenTofu Registry omits it 90 minutes after.
+      - --dry-run prints the diff and leaves the module repository unchanged.
+      - Each publish creates a GitHub Release on the module repository from the hub tag's message.
+    depends_on: [WI-001, WI-002, WI-003]
+    labels: [triaged]
+    estimate:
+      value: 4
+      unit: days
+
+  - id: WI-006
+    kind: task
+    parent: INIT-001
+    title: "Publish s3 and sqs v0.1.0 to new terraform-aws-s3 and terraform-aws-sqs repositories"
+    description: >-
+      Pilot the new-repository path. Dry-run s3 and sqs, then tag each at 0.1.0 with devex sre release --module=aws/s3
+      --bump minor and the same for sqs, since their commits carry no conventional-commit titles. The first verify
+      run fails because neither registry knows the repositories yet; register both on the Terraform Registry and the
+      OpenTofu Registry, recording each manual step for the hub guide, and rerun the publish run, which verifies again.
+      Before tagging, replace the git:: source in the s3 and sqs README usage with the registry address.
+    acceptance_criteria:
+      - The published s3 and sqs READMEs show the project-init/s3/aws and project-init/sqs/aws registry sources.
+      - terraform-aws-s3 and terraform-aws-sqs hold their modules at the root with tag v0.1.0 on a commit naming the hub
+        SHA.
+      - Both registries list project-init/s3/aws 0.1.0 and project-init/sqs/aws 0.1.0.
+      - tofu init succeeds in modules/aws/sqs/examples/eventbridge.
+      - terraform-aws-s3 and terraform-aws-sqs each have a v0.1.0 GitHub Release built from the hub tag's message.
+      - The rerun after registry sign-up pushes no new commit or tag to either module repository.
+      - The recorded registration steps cover both registries.
+    depends_on: [WI-002, WI-003, WI-005, WI-012, WI-015]
+    labels: [triaged]
+    estimate:
+      value: 1
+      unit: days
+
+  - id: WI-013
+    kind: task
+    parent: INIT-001
+    title: "Retire repo-wide releases in the hub"
+    description: >-
+      After the first per-module release, delete .github/workflows/release.yaml and .github/release-drafter.yml, and
+      turn off repo-wide releases in .sre/release.yaml. The published v0.0.x tags stay.
+    acceptance_criteria:
+      - The hub no longer holds .github/workflows/release.yaml or .github/release-drafter.yml.
+      - devex sre release without --module or --changed fails in the hub and points to them.
+      - The v0.0.2 and v0.0.3 tags still resolve for software-assembly-line.
+    depends_on: [WI-006]
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: hours
+
+  - id: WI-014
+    kind: task
+    parent: INIT-001
+    title: "Add scripts/import-module.sh for importing a module repository"
+    description: >-
+      Add scripts/import-module.sh, which takes a module name, copies only the .tf files, examples/, tests/, and
+      README.md from terraform-aws-<name>'s main into modules/aws/<name>/ without history, and records the version of
+      its highest v* tag by semver as the module's baseline in .sre/release.yaml. Copying main keeps changes merged
+      since the last tag, which the import's patch release then publishes, so the script prints the commits since that
+      tag that touch module files, for the import PR title to name. The repos.csv change stays a manual step in
+      infrastructure-platform.
+    acceptance_criteria:
+      - scripts/import-module.sh simple-network prints the cloudposse/dynamic-subnets bump as unreleased, and
+        scripts/import-module.sh subdomain prints no unreleased change.
+      - In a scratch checkout, never committed, scripts/import-module.sh subdomain creates modules/aws/subdomain holding
+        only .tf files, examples/, tests/, and README.md, and adds a 0.1.0 subdomain baseline to .sre/release.yaml.
+      - In the same scratch checkout, scripts/import-module.sh cognito records a 0.1.13 baseline, not 0.1.9.
+      - Rerunning the script for an imported module fails without changing files.
+      - A name with no terraform-aws-<name> repository fails with an error that names it.
+    depends_on: [WI-012]
+    labels: [triaged]
+    estimate:
+      value: 1
+      unit: days
+
+  - id: WI-007
+    kind: task
+    parent: INIT-001
+    title: "Import subdomain and publish v0.1.1 over its existing repository"
+    description: >-
+      Pilot the existing-repository path. Mark terraform-aws-subdomain's repos.csv row with an import block for its
+      existing ruleset and apply it in infrastructure-platform, which freezes the repository and lets the App push. Then
+      import it with scripts/import-module.sh, which records a 0.1.0 baseline, close its open Dependabot PRs, and
+      release v0.1.1 with devex sre release --module=aws/subdomain --bump patch. The snapshot replaces the repository's
+      old workflows and templates.
+    acceptance_criteria:
+      - terraform-aws-subdomain main holds only module files, the hub's LICENSE, and the terraform-docs README with the
+        hub note, and keeps its earlier history.
+      - Both registries list project-init/subdomain/aws 0.1.1, and the verify workflow passes on its first run.
+      - Bumping infrastructure-platform to subdomain v0.1.1 produces a tofu plan with no changes.
+      - devex sre release --module=aws/subdomain --dry-run counts no commit that touches only modules/aws/s3.
+    depends_on: [WI-006, WI-014]
+    labels: [triaged]
+    estimate:
+      value: 1
+      unit: days
+
+  - id: WI-009
+    kind: feature
+    parent: INIT-001
+    title: "Import the remaining 16 registry modules into the hub"
+    description: >-
+      Import each remaining terraform-aws-* module in its own PR using the subdomain pattern: mark the repos.csv row
+      with an import block for its existing ruleset and apply it in infrastructure-platform, then run
+      scripts/import-module.sh, close open Dependabot PRs, and release a patch version with --bump patch. Import secret
+      before vpn, then the rest by consumer count, lowest first, ending with version-manager and account-context. vpn
+      keeps its project-init/secret/aws v0.1.0 registry address. Name in each import PR title any unreleased change
+      the import script prints; today only simple-network has one, a cloudposse/dynamic-subnets bump from 3.0.1 to
+      3.1.1. After the last
+      import, have the org admin remove workflows write from the App; no later snapshot removes workflow files.
+    acceptance_criteria:
+      - All 16 modules live under modules/aws/ and pass tofu validate in hub CI.
+      - Each module has a patch release listed on both registries, published from the hub.
+      - simple-network releases as 0.2.1, and its release notes name the cloudposse/dynamic-subnets bump to 3.1.1.
+      - After the next weekly dependency PR, modules/README.md lists all 19 modules.
+      - After the last import, the App holds contents write and metadata read only.
+      - A bare devex sre release --module lists all 19 modules when each has releasable commits.
+      - Every terraform-aws-* repository rejects pushes from anyone but the App and org admins.
+    depends_on: [WI-007]
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: weeks
+
+  - id: WI-010
+    kind: task
+    parent: INIT-001
+    title: "Move s3 and sqs consumers from git sources to registry addresses"
+    description: >-
+      Replace the git:: sources for s3 and sqs in business-platform and data-platform (terraform/modules/main/s3.tf,
+      sqs.tf, flags.tf) and software-assembly-line (terraform/modules/main/context_bucket.tf,
+      terraform/modules/sal/work_queue.tf) with project-init/s3/aws and project-init/sqs/aws at 0.1.0.
+    acceptance_criteria:
+      - No repository in the organization references infrastructure.git as a module source.
+      - tofu plan in each changed root shows no resource changes.
+    depends_on: [WI-006]
+    labels: [triaged]
+    estimate:
+      value: 2
+      unit: days
+
+  - id: WI-011
+    kind: task
+    parent: INIT-001
+    title: "Document adding, releasing, and registering modules in the hub README"
+    description: >-
+      Add hub README guides for adding a module (directory layout, baseline in .sre/release.yaml, repos.csv row),
+      cutting a release (conventional commits, devex sre release --module or --changed, the publish and verify workflows,
+      republishing), registering a new module repository on both registries with the steps recorded in the
+      WI-006 pilot, and recovering a version either registry missed.
+    acceptance_criteria:
+      - A reader can add and publish a new module following the README alone.
+      - The registration guide covers both registries with the steps verified in the WI-006 pilot.
+      - The recovery guide covers the Terraform Registry's resync and, for OpenTofu, rerunning the verify workflow after the
+        next scan and raising an issue on opentofu/registry.
+    depends_on: [WI-006]
+    labels: [triaged]
+    estimate:
+      value: 1
+      unit: days
